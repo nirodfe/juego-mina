@@ -17,34 +17,26 @@ class MenuScene extends Phaser.Scene {
             .setOrigin(0.5) // Centrar la imagen en su punto medio
             .setDisplaySize(this.cameras.main.width, this.cameras.main.height); // Ajustar al tamaño de la pantalla
 
-        // Centrar el título con el nuevo nombre
+        // Centrar el título con un ajuste hacia la izquierda
         this.add.text(
-            this.cameras.main.width / 2, // Centrar en el eje X
+            this.cameras.main.width / 2 - 15, // Mover hacia la izquierda
             this.cameras.main.height / 3 + 20, // Mantener la misma altura
-            'Miner Madness', // El nuevo título del juego
-            { fontSize: '48px', fill: '#f5deb3', fontStyle: 'bold' } // Color crema y estilo en negrita
+            'Juego Mina',
+            { fontSize: '48px', fill: '#fff' }
         ).setOrigin(0.5);
 
-        // Centrar el botón con estilo negro y marrón al pasar el cursor
+        // Centrar el botón con un ajuste hacia la izquierda
         const boton = this.add.text(
             this.cameras.main.width / 2 - 15, // Mover hacia la izquierda
             this.cameras.main.height / 2 + 30, // Mantener la misma altura
-            'JUGAR', // Texto cambiado a "JUGAR"
-            { fontSize: '32px', fill: '#000', fontStyle: 'bold' } // Botón en negro y estilo en negrita
+            'Iniciar Juego',
+            { fontSize: '32px', fill: '#0f0' }
         )
             .setOrigin(0.5)
             .setInteractive()
             .on('pointerdown', () => this.scene.start('GameScene')) // Cambiar a la escena del juego
-            .on('pointerover', () => boton.setStyle({ fill: '#8b4513' })) // Cambiar a marrón al pasar el mouse
-            .on('pointerout', () => boton.setStyle({ fill: '#000' })); // Restaurar negro al quitar el cursor
-
-        // Añadir el cartel con tu nombre en color crema
-        this.add.text(
-            this.cameras.main.width / 2, // Centrado en X
-            this.cameras.main.height / 2 + 80, // Posicionar debajo del botón
-            'Hecho por: Nicolás Rodríguez Ferrándiz',
-            { fontSize: '24px', fill: '#f5deb3', fontStyle: 'bold' } // Color crema y estilo en negrita
-        ).setOrigin(0.5);
+            .on('pointerover', () => boton.setStyle({ fill: '#ff0' })) // Cambiar color al pasar el mouse
+            .on('pointerout', () => boton.setStyle({ fill: '#0f0' })); // Restaurar color
     }
 }
 
@@ -71,6 +63,9 @@ class GameScene extends Phaser.Scene {
         this.cameras.main.setBounds(0, 0, gridSize * tileSize, gridSize * tileSize);
         this.cameras.main.setBackgroundColor('rgba(0, 0, 0, 0)'); // Fondo completamente transparente
         this.physics.world.setBounds(0, 0, gridSize * tileSize, gridSize * tileSize);
+        // Crear un grupo de colisiones para los bloques
+        this.collisionGroup = this.physics.add.staticGroup();
+
 
         this.grid = Array.from({ length: gridSize }, () =>
             Array.from({ length: gridSize }, () => ({ type: 'empty' }))
@@ -162,26 +157,40 @@ class GameScene extends Phaser.Scene {
         for (let x = 0; x < gridSize; x++) {
             for (let y = 0; y < gridSize; y++) {
                 if (this.grid[x][y].type === 'tierra' && y >= 3 && y <= 10) {
-                    this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'tierra')
-                        .setOrigin(0)
+                    this.grid[x][y].sprite = this.collisionGroup.create(
+                        x * this.tileSize + this.tileSize / 2, // Centrar en el bloque
+                        y * this.tileSize + this.tileSize / 2,
+                        'tierra'
+                    )
+                        .setOrigin(0.5)
                         .setDisplaySize(this.tileSize, this.tileSize);
                 } else if (this.grid[x][y].type === 'piedra' && y > 10) {
-                    this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
-                        .setOrigin(0)
+                    this.grid[x][y].sprite = this.collisionGroup.create(
+                        x * this.tileSize + this.tileSize / 2,
+                        y * this.tileSize + this.tileSize / 2,
+                        'piedra'
+                    )
+                        .setOrigin(0.5)
                         .setDisplaySize(this.tileSize, this.tileSize);
-                } else if (this.grid[x][y].type === 'carbon') { // Bloques de carbón
-                    this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'carbon')
-                        .setOrigin(0)
+                } else if (this.grid[x][y].type === 'carbon') {
+                    this.grid[x][y].sprite = this.collisionGroup.create(
+                        x * this.tileSize + this.tileSize / 2,
+                        y * this.tileSize + this.tileSize / 2,
+                        'carbon'
+                    )
+                        .setOrigin(0.5)
                         .setDisplaySize(this.tileSize, this.tileSize);
                 }
             }
-        }
+        }        
 
         // Añadir el personaje
         this.player = this.physics.add.sprite(2 * this.tileSize, 2 * this.tileSize, 'personaje').setOrigin(0);
         this.player.displayWidth = this.tileSize; // Ajustar ancho al tamaño de la cuadrícula
         this.player.displayHeight = this.tileSize; // Ajustar alto al tamaño de la cuadrícula
         this.player.setCollideWorldBounds(true);
+        this.player.body.allowGravity = true; // Habilitar la gravedad en el personaje
+        this.physics.add.collider(this.player, this.collisionGroup);
 
         this.cameras.main.startFollow(this.player);
 
@@ -207,17 +216,16 @@ class GameScene extends Phaser.Scene {
                 this.startMovement(tileSize, 0);
             }
         }
-        // Movimiento hacia arriba
-        else if (this.cursors.up.isDown) {
-            if (this.player.y > 0) { // No salir del límite superior
-                this.startMovement(0, -tileSize);
-            }
-        }
         // Movimiento hacia abajo
         else if (this.cursors.down.isDown) {
             if (this.player.y < this.physics.world.bounds.height - tileSize) { // No salir del límite inferior
                 this.startMovement(0, tileSize);
             }
+        }
+
+        // Salto
+        if (this.cursors.up.isDown && this.player.body.blocked.down) {
+            this.player.setVelocityY(-350); // Ajusta este valor para controlar la altura y velocidad del salto
         }
     }
 
@@ -321,7 +329,7 @@ const config = {
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 0 },
+            gravity: { y: 500 },
             debug: false
         }
     },
