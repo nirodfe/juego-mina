@@ -16,15 +16,15 @@ class MenuScene extends Phaser.Scene {
         )
             .setOrigin(0.5) // Centrar la imagen en su punto medio
             .setDisplaySize(this.cameras.main.width, this.cameras.main.height); // Ajustar al tamaño de la pantalla
-
+    
         // Centrar el título con el nuevo nombre
         this.add.text(
             this.cameras.main.width / 2, // Centrar en el eje X
             this.cameras.main.height / 3 + 20, // Mantener la misma altura
             'Miner Madness', // El nuevo título del juego
-            { fontSize: '48px', fill: '#f5deb3', fontStyle: 'bold' } // Color crema y estilo en negrita
+            { fontSize: '48px', fill: '#000', fontStyle: 'bold' } // Color crema y estilo en negrita
         ).setOrigin(0.5);
-
+    
         // Centrar el botón con estilo negro y marrón al pasar el cursor
         const boton = this.add.text(
             this.cameras.main.width / 2 - 15, // Mover hacia la izquierda
@@ -37,7 +37,7 @@ class MenuScene extends Phaser.Scene {
             .on('pointerdown', () => this.scene.start('GameScene')) // Cambiar a la escena del juego
             .on('pointerover', () => boton.setStyle({ fill: '#8b4513' })) // Cambiar a marrón al pasar el mouse
             .on('pointerout', () => boton.setStyle({ fill: '#000' })); // Restaurar negro al quitar el cursor
-
+    
         // Añadir el cartel con tu nombre en color crema
         this.add.text(
             this.cameras.main.width / 2, // Centrado en X
@@ -45,7 +45,7 @@ class MenuScene extends Phaser.Scene {
             'Hecho por: Nicolás Rodríguez Ferrándiz',
             { fontSize: '24px', fill: '#f5deb3', fontStyle: 'bold' } // Color crema y estilo en negrita
         ).setOrigin(0.5);
-    }
+    }    
 }
 
 class GameScene extends Phaser.Scene {
@@ -190,11 +190,11 @@ class GameScene extends Phaser.Scene {
 
     update() {
         const tileSize = this.tileSize; // Tamaño de un bloque (128 en este caso)
-
+    
         if (this.moving) {
             return; // No permitir nuevos movimientos mientras el personaje está en movimiento
         }
-
+    
         // Movimiento a la izquierda
         if (this.cursors.left.isDown) {
             if (this.player.x > 0) { // No salir del límite izquierdo
@@ -220,14 +220,14 @@ class GameScene extends Phaser.Scene {
             }
         }
     }
-
+    
     // Método para iniciar el movimiento bloque por bloque
     startMovement(dx, dy) {
         this.moving = true; // Bloquear nuevos movimientos mientras se realiza el actual
-
+    
         const targetX = this.player.x + dx; // Nueva posición X
         const targetY = this.player.y + dy; // Nueva posición Y
-
+    
         // Animar el movimiento hacia el nuevo bloque
         this.tweens.add({
             targets: this.player,
@@ -238,11 +238,11 @@ class GameScene extends Phaser.Scene {
                 this.moving = false; // Permitir nuevos movimientos una vez completado
             }
         });
-
+    
         // Verificar y vaciar el bloque al que se mueve el personaje
         const gridX = Math.floor(targetX / this.tileSize);
         const gridY = Math.floor(targetY / this.tileSize);
-
+    
         if (this.grid[gridX] && this.grid[gridX][gridY]) {
             if (this.grid[gridX][gridY].type === 'tierra' || this.grid[gridX][gridY].type === 'piedra' || this.grid[gridX][gridY].type === 'carbon') {
                 this.grid[gridX][gridY].type = 'empty'; // Vaciar la celda
@@ -252,7 +252,7 @@ class GameScene extends Phaser.Scene {
                 }
             }
         }
-    }
+    }    
 
     startMovement(dx, dy) {
         this.moving = true; // Bloquear nuevos movimientos
