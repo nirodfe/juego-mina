@@ -64,21 +64,11 @@ class GameScene extends Phaser.Scene {
         this.load.image('carbon', 'assets/carbon.png'); // Textura de carbón
         this.load.image('tierraHierba', 'assets/tierraHierba.png');
         this.load.image('mochila', 'assets/mochila.png'); // Cambia 'mochila.png' por el nombre real del archivo
-        this.load.image('cobre', 'assets/cobre.png'); // Asegúrate de que esta línea esté en preload
-        this.load.image('hierro', 'assets/hierro.png'); // Cambia el nombre del archivo a tu textura de hierro
-        this.load.image('plata', 'assets/plata.png'); // Cambia 'plata.png' por el nombre correcto del archivo
-        this.load.image('oro', 'assets/oro.png'); // Cambia 'assets/oro.png' por la ruta de tu textura de oro
-        this.load.image('rubi', 'assets/rubi.png'); // Cambia el nombre del archivo por el correcto
-        this.load.image('esmeralda', 'assets/esmeralda.png'); // Cambia el nombre del archivo por el correcto
-        this.load.image('diamante', 'assets/diamante.png'); // Cambia el nombre del archivo por el correcto
     }
 
     create() {
         const tileSize = 128;
-        const gridSize = 175;
-
-        this.carbonCount = 0; // Inicializar contador de carbón recolectado
-        this.cobreCount = 0; // Contador de cobre
+        const gridSize = 100;
 
         this.cameras.main.setBounds(0, 0, gridSize * tileSize, gridSize * tileSize);
         this.cameras.main.setBackgroundColor('rgba(0, 0, 0, 0)'); // Fondo completamente transparente
@@ -91,18 +81,19 @@ class GameScene extends Phaser.Scene {
         // Inicializar las filas de tierra y piedra
         for (let x = 0; x < gridSize; x++) {
             for (let y = 0; y < gridSize; y++) {
-                if (y >= 3 && y <= 5) {
+                if (y >= 3 && y <= 10) {
                     this.grid[x][y] = { type: 'tierra' }; // Fila de tierra
-                } else if (y > 5) {
+                } else if (y > 10) {
                     this.grid[x][y] = { type: 'piedra' }; // Fila de piedra
                 }
             }
         }
 
-        let carbonCount = 900;
+        // Distribuir aleatoriamente 750 bloques de carbón en la zona de piedra
+        let carbonCount = 750;
         while (carbonCount > 0) {
             const x = Phaser.Math.Between(0, gridSize - 1); // Coordenada X aleatoria
-            const y = Phaser.Math.Between(6, gridSize - 1); // Coordenada Y aleatoria (zona de piedra)
+            const y = Phaser.Math.Between(11, gridSize - 1); // Coordenada Y aleatoria (zona de piedra)
 
             if (this.grid[x][y].type === 'piedra') {
                 this.grid[x][y].type = 'carbon'; // Cambiar el tipo a carbón
@@ -110,82 +101,7 @@ class GameScene extends Phaser.Scene {
             }
         }
 
-        let cobreCount = 800;
-        while (cobreCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1); // Coordenada X aleatoria
-            const y = Phaser.Math.Between(6, gridSize - 1); // Coordenada Y aleatoria (zona de piedra)
-
-            if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'cobre'; // Cambiar el tipo a cobre
-                cobreCount--;
-            }
-        }
-
-        let hierroCount = 700; // Cantidad de bloques de hierro
-        while (hierroCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1); // Coordenada X aleatoria
-            const y = Phaser.Math.Between(11, gridSize - 1); // Coordenada Y aleatoria (zona de piedra)
-
-            if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'hierro'; // Cambiar el tipo a hierro
-                hierroCount--;
-            }
-        }
-
-        let plataCount = 600; // Cantidad de bloques de plata
-        while (plataCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1); // Coordenada X aleatoria
-            const y = Phaser.Math.Between(6, gridSize - 1); // Coordenada Y aleatoria (zona de piedra)
-
-            if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'plata'; // Cambiar el tipo a plata
-                plataCount--;
-            }
-        }
-
-        let oroCount = 500; // Cantidad de bloques de oro
-        while (oroCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1); // Coordenada X aleatoria
-            const y = Phaser.Math.Between(6, gridSize - 1); // Coordenada Y aleatoria (zona de piedra)
-
-            if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'oro'; // Cambiar el tipo a oro
-                oroCount--;
-            }
-        }
-
-        let rubiCount = 350; // Cantidad de bloques de rubí
-        while (rubiCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1); // Coordenada X aleatoria
-            const y = Phaser.Math.Between(6, gridSize - 1); // Coordenada Y aleatoria (zona de piedra)
-
-            if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'rubi'; // Cambiar el tipo a rubí
-                rubiCount--;
-            }
-        }
-
-        let esmeraldaCount = 250; // Cantidad de bloques de esmeralda
-        while (esmeraldaCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1); // Coordenada X aleatoria
-            const y = Phaser.Math.Between(6, gridSize - 1); // Coordenada Y aleatoria (zona de piedra)
-
-            if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'esmeralda'; // Cambiar el tipo a esmeralda
-                esmeraldaCount--;
-            }
-        }
-
-        let diamanteCount = 100; // Cantidad de bloques de diamante
-        while (diamanteCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1); // Coordenada X aleatoria
-            const y = Phaser.Math.Between(6, gridSize - 1); // Coordenada Y aleatoria (zona de piedra)
-
-            if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'diamante'; // Cambiar el tipo a diamante
-                diamanteCount--;
-            }
-        }
+        console.log('Distribución de carbón completa.');
 
         // Crear cuadrículas
         for (let x = 0; x < gridSize; x++) {
@@ -193,7 +109,7 @@ class GameScene extends Phaser.Scene {
                 let color;
                 if (y < 3) {
                     color = 0x87CEEB; // Azul cielo
-                } else if (y >= 3 && y <= 5) {
+                } else if (y >= 3 && y <= 10) {
                     color = 0x8B4513; // Marrón tierra
                 } else {
                     color = 0x444444; // Gris piedra
@@ -204,7 +120,7 @@ class GameScene extends Phaser.Scene {
         }
         this.tileSize = tileSize;
 
-        const numNubes = 75; // Número de nubes
+        const numNubes = 50; // Número de nubes
         const minSpeed = 3; // Velocidad mínima en píxeles/segundo
         const maxSpeed = 9; // Velocidad máxima en píxeles/segundo
 
@@ -251,48 +167,14 @@ class GameScene extends Phaser.Scene {
                     this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'tierraHierba')
                         .setOrigin(0)
                         .setDisplaySize(this.tileSize, this.tileSize);
-                } else if (y >= 4 && y <= 5) { // Otras filas de tierra
+                } else if (y >= 4 && y <= 10) { // Otras filas de tierra
                     this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'tierra')
                         .setOrigin(0)
                         .setDisplaySize(this.tileSize, this.tileSize);
-                } else if (y > 5) { // Filas de piedra y carbón
+                } else if (y > 10) { // Filas de piedra y carbón
                     if (this.grid[x][y].type === 'carbon') {
                         // Dibujar bloque de carbón
                         this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'carbon')
-                            .setOrigin(0)
-                            .setDisplaySize(this.tileSize, this.tileSize);
-                    } else if (this.grid[x][y].type === 'cobre') {
-                        // Dibujar bloque de cobre
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'cobre')
-                            .setOrigin(0)
-                            .setDisplaySize(this.tileSize, this.tileSize);
-                    } else if (this.grid[x][y].type === 'hierro') {
-                        // Dibujar bloque de hierro
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'hierro')
-                            .setOrigin(0)
-                            .setDisplaySize(this.tileSize, this.tileSize);
-                    } else if (this.grid[x][y].type === 'plata') {
-                        // Dibujar bloque de plata
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'plata')
-                            .setOrigin(0)
-                            .setDisplaySize(this.tileSize, this.tileSize);
-                    } else if (this.grid[x][y].type === 'oro') {
-                        // Dibujar bloque de oro
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'oro')
-                            .setOrigin(0)
-                            .setDisplaySize(this.tileSize, this.tileSize);
-                    } else if (this.grid[x][y].type === 'rubi') { // Nueva lógica para el rubí
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'rubi')
-                            .setOrigin(0)
-                            .setDisplaySize(this.tileSize, this.tileSize);
-                    } else if (this.grid[x][y].type === 'esmeralda') {
-                        // Dibujar bloque de esmeralda
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'esmeralda')
-                            .setOrigin(0)
-                            .setDisplaySize(this.tileSize, this.tileSize);
-                    } else if (this.grid[x][y].type === 'diamante') {
-                        // Dibujar bloque de diamante
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'diamante')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
                     } else {
@@ -304,7 +186,6 @@ class GameScene extends Phaser.Scene {
                 }
             }
         }
-
         // Añadir el personaje
         this.player = this.physics.add.sprite(2 * this.tileSize, 2 * this.tileSize, 'personaje').setOrigin(0);
         this.player.displayWidth = this.tileSize; // Ajustar ancho al tamaño de la cuadrícula
@@ -316,7 +197,7 @@ class GameScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
 
         // Tamaño deseado del botón
-        const buttonSize = 100;
+        const buttonSize = 64;
 
         // Crear el menú de la mochila (oculto al principio)
         this.menuContainer = this.add.container(0, 0).setVisible(false);
@@ -348,109 +229,22 @@ class GameScene extends Phaser.Scene {
 
         // Estadísticas dentro del menú (centradas dinámicamente)
         this.carbonText = this.add.text(
-            0, -50, // Ligeramente por encima del centro
+            0, 0, // Centrado horizontalmente y verticalmente
             'Carbón: 0',
             {
                 fontSize: '32px',
                 fill: '#ffffff'
             }
         ).setOrigin(0.5);
-
-        this.cobreText = this.add.text(
-            0, 0, // Ligeramente por debajo del centro
-            'Cobre: 0',
+        this.mineralText = this.add.text(
+            0, this.cameras.main.height / 8, // Centrado horizontalmente y un poco más abajo
+            'Minerales: 0',
             {
                 fontSize: '32px',
                 fill: '#ffffff'
             }
         ).setOrigin(0.5);
-
-        this.hierroCount = 0; // Inicializar contador de hierro
-
-        this.hierroText = this.add.text(
-            0, 50, // Ajustar posición debajo de los otros textos
-            'Hierro: 0',
-            {
-                fontSize: '32px',
-                fill: '#ffffff'
-            }
-        ).setOrigin(0.5);
-
-        this.plataCount = 0; // Inicializar contador de plata
-
-        this.plataText = this.add.text(
-            0, 100, // Ligeramente por debajo del texto de cobre
-            'Plata: 0',
-            {
-                fontSize: '32px',
-                fill: '#ffffff'
-            }
-        ).setOrigin(0.5);
-
-        this.oroCount = 0; // Inicializar contador de oro
-
-        this.oroText = this.add.text(
-            0, 150, // Ajusta la posición vertical según sea necesario
-            'Oro: 0',
-            {
-                fontSize: '32px',
-                fill: '#ffffff'
-            }
-        ).setOrigin(0.5);
-
-        this.rubiCount = 0; // Inicializar contador de rubí
-
-        this.rubiText = this.add.text(
-            0, 200, // Ajusta la posición según tu diseño
-            'Rubí: 0',
-            {
-                fontSize: '32px',
-                fill: '#ffffff'
-            }
-        ).setOrigin(0.5);
-
-        this.esmeraldaCount = 0; // Inicializar contador de esmeraldas
-
-        this.esmeraldaText = this.add.text(
-            0, 250, // Ajusta la posición según tu diseño
-            'Esmeralda: 0',
-            {
-                fontSize: '32px',
-                fill: '#ffffff'
-            }
-        ).setOrigin(0.5);
-
-        this.diamanteCount = 0; // Inicializar contador de diamantes
-
-        this.diamanteText = this.add.text(
-            0, 300, // Ajusta la posición según tu diseño
-            'Diamantes: 0',
-            {
-                fontSize: '32px',
-                fill: '#ffffff'
-            }
-        ).setOrigin(0.5);
-
-        // Añadir el texto de diamantes al contenedor del menú
-        this.menuContainer.add(this.diamanteText);
-
-        // Añadir el texto de esmeraldas al contenedor del menú
-        this.menuContainer.add(this.esmeraldaText);
-
-        // Añade este texto al contenedor del menú
-        this.menuContainer.add(this.rubiText);
-
-        // Añadir el texto al contenedor del menú
-        this.menuContainer.add(this.oroText);
-
-        // Añadir el texto de plata al contenedor del menú
-        this.menuContainer.add(this.plataText);
-
-        this.menuContainer.add(this.hierroText); // Añadir al contenedor del menú
-
-
-        // Añadir los textos deseados al contenedor del menú
-        this.menuContainer.add([this.carbonText, this.cobreText]);
+        this.menuContainer.add([this.carbonText, this.mineralText]);
 
         // Añadir el botón de la mochila
         const mochilaButton = this.add.image(
@@ -522,9 +316,40 @@ class GameScene extends Phaser.Scene {
         }
     }
 
+    // Método para iniciar el movimiento bloque por bloque
     startMovement(dx, dy) {
-        if (this.moving) return; // No permitir nuevos movimientos si ya está en movimiento
+        this.moving = true; // Bloquear nuevos movimientos mientras se realiza el actual
 
+        const targetX = this.player.x + dx; // Nueva posición X
+        const targetY = this.player.y + dy; // Nueva posición Y
+
+        // Animar el movimiento hacia el nuevo bloque
+        this.tweens.add({
+            targets: this.player,
+            x: targetX,
+            y: targetY,
+            duration: 200, // Ajusta la duración del movimiento si es necesario
+            onComplete: () => {
+                this.moving = false; // Permitir nuevos movimientos una vez completado
+            }
+        });
+
+        // Verificar y vaciar el bloque al que se mueve el personaje
+        const gridX = Math.floor(targetX / this.tileSize);
+        const gridY = Math.floor(targetY / this.tileSize);
+
+        if (this.grid[gridX] && this.grid[gridX][gridY]) {
+            if (this.grid[gridX][gridY].type === 'tierra' || this.grid[gridX][gridY].type === 'piedra' || this.grid[gridX][gridY].type === 'carbon') {
+                this.grid[gridX][gridY].type = 'empty'; // Vaciar la celda
+                if (this.grid[gridX][gridY].sprite) {
+                    this.grid[gridX][gridY].sprite.destroy(); // Destruir el sprite del bloque
+                    this.grid[gridX][gridY].sprite = null;
+                }
+            }
+        }
+    }
+
+    startMovement(dx, dy) {
         this.moving = true; // Bloquear nuevos movimientos
         const targetX = this.player.x + dx;
         const targetY = this.player.y + dy;
@@ -534,96 +359,41 @@ class GameScene extends Phaser.Scene {
             targets: this.player,
             x: targetX,
             y: targetY,
-            duration: 200, // Duración del movimiento
-            ease: 'Quadratic.Out', // Efecto de easing para suavizar el movimiento
+            duration: 200, // Duración del movimiento (en ms)
             onComplete: () => {
                 const gridX = Math.floor(targetX / this.tileSize);
                 const gridY = Math.floor(targetY / this.tileSize);
 
-                // Verificar si la posición es válida y si hay un bloque en esa posición
-                if (this.grid[gridX] && this.grid[gridX][gridY]) {
-                    const block = this.grid[gridX][gridY];
+                // Identificar el tipo de celda y actuar en consecuencia
+                if (this.grid[gridX][gridY].type === 'tierra') {
+                    this.grid[gridX][gridY].type = 'empty';
 
-                    // Recolectar carbón
-                    if (block.type === 'carbon') {
-                        this.carbonCount += 1; // Incrementar el contador de carbón
-                        this.carbonText.setText(`Carbón: ${this.carbonCount}`); // Actualizar el menú
-                        block.type = 'empty'; // Vaciar el bloque
-                        if (block.sprite) block.sprite.destroy(); // Eliminar el sprite del bloque
+                    if (this.grid[gridX][gridY].sprite) {
+                        this.grid[gridX][gridY].sprite.destroy();
+                        this.grid[gridX][gridY].sprite = null;
                     }
+                } else if (this.grid[gridX][gridY].type === 'piedra') {
+                    this.grid[gridX][gridY].type = 'empty';
 
-                    // Recolectar cobre
-                    if (block.type === 'cobre') {
-                        this.cobreCount += 1; // Incrementar el contador de cobre
-                        this.cobreText.setText(`Cobre: ${this.cobreCount}`); // Actualizar el menú
-                        block.type = 'empty'; // Cambiar el tipo del bloque a vacío
-                        if (block.sprite) block.sprite.destroy(); // Eliminar el sprite del bloque de cobre
+                    if (this.grid[gridX][gridY].sprite) {
+                        this.grid[gridX][gridY].sprite.destroy();
+                        this.grid[gridX][gridY].sprite = null;
                     }
+                } else if (this.grid[gridX][gridY].type === 'carbon') {
+                    // Lógica para vaciar el carbón
+                    this.grid[gridX][gridY].type = 'empty';
 
-                    // Recolectar hierro
-                    if (block.type === 'hierro') {
-                        this.hierroCount += 1; // Incrementar el contador de hierro
-                        this.hierroText.setText(`Hierro: ${this.hierroCount}`); // Actualizar el menú
-                        block.type = 'empty'; // Cambiar el tipo del bloque a vacío
-                        if (block.sprite) block.sprite.destroy(); // Eliminar el sprite del bloque de hierro
+                    if (this.grid[gridX][gridY].sprite) {
+                        this.grid[gridX][gridY].sprite.destroy();
+                        this.grid[gridX][gridY].sprite = null;
                     }
-
-                    // Recolectar plata
-                    if (block.type === 'plata') {
-                        this.plataCount += 1; // Incrementar el contador de plata
-                        this.plataText.setText(`Plata: ${this.plataCount}`); // Actualizar el menú
-                        block.type = 'empty'; // Cambiar el tipo del bloque a vacío
-                        if (block.sprite) {
-                            block.sprite.destroy(); // Eliminar el sprite del bloque de plata
-                        }
-                    }
-
-                    // Recolectar oro
-                    if (block.type === 'oro') {
-                        this.oroCount = (this.oroCount || 0) + 1; // Incrementar el contador de oro
-                        this.oroText.setText(`Oro: ${this.oroCount}`); // Actualizar el menú
-                        block.type = 'empty'; // Cambiar el tipo del bloque a vacío
-                        if (block.sprite) block.sprite.destroy(); // Eliminar el sprite del bloque de oro
-                    }
-
-                    if (block.type === 'rubi') { // Recolectar rubí
-                        this.rubiCount = (this.rubiCount || 0) + 1; // Incrementar el contador de rubí
-                        this.rubiText.setText(`Rubí: ${this.rubiCount}`); // Actualizar el texto en el menú
-                        block.type = 'empty'; // Cambiar el tipo del bloque a vacío
-                        if (block.sprite) block.sprite.destroy(); // Eliminar el sprite del bloque de rubí
-                    }
-
-                    // Recolectar esmeralda
-                    if (block.type === 'esmeralda') {
-                        this.esmeraldaCount += 1; // Incrementar el contador de esmeraldas
-                        this.esmeraldaText.setText(`Esmeraldas: ${this.esmeraldaCount}`); // Actualizar el texto en el menú
-                        block.type = 'empty'; // Vaciar el bloque
-                        if (block.sprite) {
-                            block.sprite.destroy(); // Eliminar el sprite
-                            block.sprite = null; // Asegurarse de que no haya referencia
-                        }
-                    }
-
-                    // Recolectar diamante
-                    if (block.type === 'diamante') {
-                        this.diamanteCount = (this.diamanteCount || 0) + 1; // Incrementar el contador de diamantes
-                        this.diamanteText.setText(`Diamantes: ${this.diamanteCount}`); // Actualizar el texto en el menú
-                        block.type = 'empty'; // Vaciar el bloque
-                        if (block.sprite) {
-                            block.sprite.destroy(); // Eliminar el sprite
-                            block.sprite = null; // Asegurarse de que no haya referencia
-                        }
-                    }
-
-                    // Vaciar bloques de tierra o piedra
-                    if (block.type === 'tierra' || block.type === 'piedra') {
-                        block.type = 'empty';
-                        if (block.sprite) block.sprite.destroy();
-                    }
+                } else {
+                    console.log('Esta celda ya está vacía.');
                 }
 
-                // Liberar el bloqueo de movimiento
+                // Siempre liberar el movimiento después de cualquier acción
                 this.moving = false;
+                this.update(); // Verificar si la tecla sigue presionada
             }
         });
     }
