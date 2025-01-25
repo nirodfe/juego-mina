@@ -348,7 +348,7 @@ class GameScene extends Phaser.Scene {
 
         // Estadísticas dentro del menú (centradas dinámicamente)
         this.carbonText = this.add.text(
-            0, -50, // Ligeramente por encima del centro
+            0, -100, // Ligeramente por encima del centro
             'Carbón: 0',
             {
                 fontSize: '32px',
@@ -357,7 +357,7 @@ class GameScene extends Phaser.Scene {
         ).setOrigin(0.5);
 
         this.cobreText = this.add.text(
-            0, 0, // Ligeramente por debajo del centro
+            0, -50, // Ligeramente por debajo del centro
             'Cobre: 0',
             {
                 fontSize: '32px',
@@ -368,7 +368,7 @@ class GameScene extends Phaser.Scene {
         this.hierroCount = 0; // Inicializar contador de hierro
 
         this.hierroText = this.add.text(
-            0, 50, // Ajustar posición debajo de los otros textos
+            0, 0, // Ajustar posición debajo de los otros textos
             'Hierro: 0',
             {
                 fontSize: '32px',
@@ -379,7 +379,7 @@ class GameScene extends Phaser.Scene {
         this.plataCount = 0; // Inicializar contador de plata
 
         this.plataText = this.add.text(
-            0, 100, // Ligeramente por debajo del texto de cobre
+            0, 50, // Ligeramente por debajo del texto de cobre
             'Plata: 0',
             {
                 fontSize: '32px',
@@ -390,7 +390,7 @@ class GameScene extends Phaser.Scene {
         this.oroCount = 0; // Inicializar contador de oro
 
         this.oroText = this.add.text(
-            0, 150, // Ajusta la posición vertical según sea necesario
+            0, 100, // Ajusta la posición vertical según sea necesario
             'Oro: 0',
             {
                 fontSize: '32px',
@@ -401,7 +401,7 @@ class GameScene extends Phaser.Scene {
         this.rubiCount = 0; // Inicializar contador de rubí
 
         this.rubiText = this.add.text(
-            0, 200, // Ajusta la posición según tu diseño
+            0, 150, // Ajusta la posición según tu diseño
             'Rubí: 0',
             {
                 fontSize: '32px',
@@ -412,7 +412,7 @@ class GameScene extends Phaser.Scene {
         this.esmeraldaCount = 0; // Inicializar contador de esmeraldas
 
         this.esmeraldaText = this.add.text(
-            0, 250, // Ajusta la posición según tu diseño
+            0, 200, // Ajusta la posición según tu diseño
             'Esmeralda: 0',
             {
                 fontSize: '32px',
@@ -423,7 +423,7 @@ class GameScene extends Phaser.Scene {
         this.diamanteCount = 0; // Inicializar contador de diamantes
 
         this.diamanteText = this.add.text(
-            0, 300, // Ajusta la posición según tu diseño
+            0, 250, // Ajusta la posición según tu diseño
             'Diamantes: 0',
             {
                 fontSize: '32px',
