@@ -71,11 +71,26 @@ class GameScene extends Phaser.Scene {
         this.load.image('rubi', 'assets/rubi.png'); // Cambia el nombre del archivo por el correcto
         this.load.image('esmeralda', 'assets/esmeralda.png'); // Cambia el nombre del archivo por el correcto
         this.load.image('diamante', 'assets/diamante.png'); // Cambia el nombre del archivo por el correcto
+        this.load.audio('sonido1', 'assets/sonido1.mp3');
+        this.load.audio('sonido2', 'assets/sonido2.mp3');
+        this.load.audio('sonido3', 'assets/sonido3.mp3');
+        this.load.audio('sonido4', 'assets/sonido4.mp3');
     }
 
     create() {
         const tileSize = 128;
         const gridSize = 175;
+
+        this.sounds = [
+            this.sound.add('sonido1'),
+            this.sound.add('sonido2'),
+            this.sound.add('sonido3'),
+            this.sound.add('sonido4')
+        ];
+        this.currentSoundIndex = 0;
+
+        // Iniciar la reproducción en bucle
+        this.playNextSound();
 
         this.carbonCount = 0; // Inicializar contador de carbón recolectado
         this.cobreCount = 0; // Contador de cobre
@@ -257,8 +272,13 @@ class GameScene extends Phaser.Scene {
                         .setDisplaySize(this.tileSize, this.tileSize);
                 } else if (y > 5) { // Filas de piedra y carbón
                     if (this.grid[x][y].type === 'carbon') {
-                        // Dibujar bloque de carbón
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'carbon')
+                        // Dibujar fondo de piedra
+                        this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+
+                        // Dibujar capa de carbón encima
+                        this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'carbon')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
                     } else if (this.grid[x][y].type === 'cobre') {
@@ -522,6 +542,16 @@ class GameScene extends Phaser.Scene {
         }
     }
 
+    playNextSound() {
+        const currentSound = this.sounds[this.currentSoundIndex];
+
+        currentSound.play();
+        currentSound.once('complete', () => {
+            this.currentSoundIndex = (this.currentSoundIndex + 1) % this.sounds.length;
+            this.playNextSound(); // Reproduce el siguiente sonido
+        });
+    }
+
     startMovement(dx, dy) {
         if (this.moving) return; // No permitir nuevos movimientos si ya está en movimiento
 
@@ -548,8 +578,19 @@ class GameScene extends Phaser.Scene {
                     if (block.type === 'carbon') {
                         this.carbonCount += 1; // Incrementar el contador de carbón
                         this.carbonText.setText(`Carbón: ${this.carbonCount}`); // Actualizar el menú
-                        block.type = 'empty'; // Vaciar el bloque
-                        if (block.sprite) block.sprite.destroy(); // Eliminar el sprite del bloque
+                        block.type = 'empty'; // Cambiar el tipo del bloque a vacío
+
+                        // Destruir la textura de carbón (superposición) si existe
+                        if (block.overlaySprite) {
+                            block.overlaySprite.destroy();
+                            block.overlaySprite = null;
+                        }
+
+                        // Destruir la textura base (piedra) si existe
+                        if (block.baseSprite) {
+                            block.baseSprite.destroy();
+                            block.baseSprite = null;
+                        }
                     }
 
                     // Recolectar cobre
