@@ -75,11 +75,15 @@ class GameScene extends Phaser.Scene {
         this.load.audio('sonido2', 'assets/sonido2.mp3');
         this.load.audio('sonido3', 'assets/sonido3.mp3');
         this.load.audio('sonido4', 'assets/sonido4.mp3');
+        this.load.image('ladder', 'assets/escalera.png'); // Ajusta la ruta si es diferente
     }
 
     create() {
         const tileSize = 128;
         const gridSize = 175;
+
+        // Configurar la tecla de espacio
+        this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
         this.sounds = [
             this.sound.add('sonido1'),
@@ -90,10 +94,7 @@ class GameScene extends Phaser.Scene {
         this.currentSoundIndex = 0;
 
         // Iniciar la reproducción en bucle
-        this.playNextSound();
-
-        this.carbonCount = 0; // Inicializar contador de carbón recolectado
-        this.cobreCount = 0; // Contador de cobre
+        this.playNextSound()
 
         this.cameras.main.setBounds(0, 0, gridSize * tileSize, gridSize * tileSize);
         this.cameras.main.setBackgroundColor('rgba(0, 0, 0, 0)'); // Fondo completamente transparente
@@ -326,7 +327,9 @@ class GameScene extends Phaser.Scene {
         }
 
         // Añadir el personaje
-        this.player = this.physics.add.sprite(2 * this.tileSize, 2 * this.tileSize, 'personaje').setOrigin(0);
+        this.player = this.physics.add.sprite(2 * this.tileSize, 2 * this.tileSize, 'personaje')
+            .setOrigin(0)
+            .setDepth(5); // Profundidad correcta para estar debajo del menú pero sobre otros elementos
         this.player.displayWidth = this.tileSize; // Ajustar ancho al tamaño de la cuadrícula
         this.player.displayHeight = this.tileSize; // Ajustar alto al tamaño de la cuadrícula
         this.player.setCollideWorldBounds(true);
@@ -334,12 +337,13 @@ class GameScene extends Phaser.Scene {
         this.cameras.main.startFollow(this.player);
 
         this.cursors = this.input.keyboard.createCursorKeys();
+        this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
         // Tamaño deseado del botón
         const buttonSize = 100;
 
         // Crear el menú de la mochila (oculto al principio)
-        this.menuContainer = this.add.container(0, 0).setVisible(false);
+        this.menuContainer = this.add.container(0, 0).setVisible(false).setDepth(15); // Establecer profundidad alta para el menú
 
         // Fondo del menú que cubre toda la pantalla visible
         const menuBackground = this.add.rectangle(
@@ -366,6 +370,8 @@ class GameScene extends Phaser.Scene {
         ).setOrigin(0.5);
         this.menuContainer.add(menuTitle);
 
+        this.carbonCount = 0; // Inicializar contador de carbón recolectado
+
         // Estadísticas dentro del menú (centradas dinámicamente)
         this.carbonText = this.add.text(
             0, -100, // Ligeramente por encima del centro
@@ -375,6 +381,8 @@ class GameScene extends Phaser.Scene {
                 fill: '#ffffff'
             }
         ).setOrigin(0.5);
+
+        this.cobreCount = 0; // Contador de cobre
 
         this.cobreText = this.add.text(
             0, -50, // Ligeramente por debajo del centro
@@ -482,34 +490,48 @@ class GameScene extends Phaser.Scene {
             .setInteractive({ useHandCursor: true }) // Hacer que sea interactivo y cambiar el cursor al pasar
             .setDisplaySize(buttonSize, buttonSize)
             .setScrollFactor(0) // Fijar el botón a la cámara para que no se mueva con el mundo
-            .setDepth(1); // Asegurarse de que el botón esté por encima del menú
+            .setDepth(15); // Asegurarse de que el botón esté por encima del menú
 
-        // Mostrar/ocultar el menú centrado en la cámara
         mochilaButton.on('pointerdown', () => {
             if (this.menuContainer.visible) {
-                // Cerrar el menú y reanudar el juego
+                // Cerrar el menú
                 this.menuContainer.setVisible(false);
                 this.physics.world.resume(); // Reanudar el mundo físico
-                this.input.keyboard.enabled = true; // Reactivar entradas
+                this.input.keyboard.enabled = true; // Reactivar entradas del teclado
+                this.cameras.main.startFollow(this.player); // Volver a seguir al jugador
+                this.input.keyboard.resetKeys(); // Reiniciar teclas
+                this.player.setVelocity(0, 0); // Detener cualquier movimiento residual
+                this.moving = false; // Reiniciar el estado de movimiento
             } else {
-                // Centramos el menú en el centro de la cámara visible
+                // Abrir el menú
+                this.player.setVelocity(0, 0); // Detener movimiento físico
+                this.moving = false; // Resetear el estado de movimiento
+
                 this.menuContainer.setPosition(
-                    this.cameras.main.scrollX + this.cameras.main.width / 2, // Centro horizontal visible
-                    this.cameras.main.scrollY + this.cameras.main.height / 2 // Centro vertical visible
+                    this.cameras.main.scrollX + this.cameras.main.width / 2,
+                    this.cameras.main.scrollY + this.cameras.main.height / 2
                 );
 
-                // Ajustar el tamaño del fondo dinámicamente al área visible
                 menuBackground.setSize(this.cameras.main.width, this.cameras.main.height);
 
-                // Mostrar el menú y pausar el juego
-                this.menuContainer.setVisible(true);
+                this.menuContainer.setVisible(true); // Mostrar el menú
                 this.physics.world.pause(); // Pausar el mundo físico
-                this.input.keyboard.enabled = false; // Desactivar entradas
+                this.input.keyboard.enabled = false; // Desactivar entradas del teclado
+                this.cameras.main.stopFollow(); // Detener el seguimiento de la cámara
+                this.input.keyboard.resetKeys(); // Reiniciar teclas
             }
         });
     }
 
     update() {
+
+        // Si el menú está abierto, detener el personaje y no permitir acciones
+        if (this.menuContainer.visible) {
+            this.player.setVelocity(0, 0); // Detener cualquier movimiento físico
+            this.moving = false; // Reiniciar el estado de movimiento
+            return; // Salir del método update mientras el menú esté abierto
+        }
+
         const tileSize = this.tileSize; // Tamaño de un bloque (128 en este caso)
 
         if (this.moving) {
@@ -530,14 +552,35 @@ class GameScene extends Phaser.Scene {
         }
         // Movimiento hacia arriba
         else if (this.cursors.up.isDown) {
-            if (this.player.y > 0) { // No salir del límite superior
-                this.startMovement(0, -tileSize);
+            const gridX = Math.floor(this.player.x / tileSize); // Posición del jugador en la cuadrícula X
+            const gridY = Math.floor(this.player.y / tileSize); // Posición del jugador en la cuadrícula Y
+
+            // Solo permitir subir si hay una escalera en la celda actual
+            if (this.grid[gridX] && this.grid[gridX][gridY] && this.grid[gridX][gridY].type === 'ladder') {
+                if (this.player.y > 0) { // No salir del límite superior
+                    this.startMovement(0, -tileSize);
+                }
             }
         }
         // Movimiento hacia abajo
         else if (this.cursors.down.isDown) {
             if (this.player.y < this.physics.world.bounds.height - tileSize) { // No salir del límite inferior
                 this.startMovement(0, tileSize);
+            }
+        }
+
+        // Lógica para colocar escaleras
+        const gridX = Math.floor(this.player.x / tileSize); // Posición del jugador en la cuadrícula X
+        const gridY = Math.floor(this.player.y / tileSize); // Posición del jugador en la cuadrícula Y
+
+        if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+            if (gridY >= 3 && this.grid[gridX] && this.grid[gridX][gridY] && this.grid[gridX][gridY].type === 'empty') {
+                // Colocar una escalera
+                this.grid[gridX][gridY].type = 'ladder'; // Cambiar el tipo del bloque
+                this.grid[gridX][gridY].sprite = this.add.image(gridX * tileSize, gridY * tileSize, 'ladder')
+                    .setOrigin(0)
+                    .setDisplaySize(tileSize, tileSize)
+                    .setDepth(1); // Establecer una profundidad baja para la escalera
             }
         }
     }
