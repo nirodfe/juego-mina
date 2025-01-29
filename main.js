@@ -543,13 +543,18 @@ class GameScene extends Phaser.Scene {
         if (!this.moving && belowGridY < this.grid[0].length && this.grid[gridX] && this.grid[gridX][belowGridY]) {
             let fallDistance = 0; // Contador para la altura de la caída
             let checkY = belowGridY; // Empezamos desde el bloque debajo del personaje
-        
+
             // Contar cuántos bloques vacíos hay debajo hasta encontrar un suelo o escalera
             while (checkY < this.grid[0].length && this.grid[gridX][checkY].type === 'empty') {
                 fallDistance++; // Aumentamos la distancia de caída
                 checkY++; // Revisamos el siguiente bloque hacia abajo
             }
-        
+
+            //Evitar caída si el personaje está en una escalera**
+            if (this.grid[gridX][gridY].type === 'ladder') {
+                fallDistance = 0; // Anulamos la caída si está en una escalera
+            }
+
             // Si hay al menos un bloque vacío, iniciamos la caída con velocidad proporcional
             if (fallDistance > 0) {
                 let fallSpeed = Math.max(100, 50 * fallDistance); // Aumenta la velocidad en función de la altura
@@ -557,7 +562,7 @@ class GameScene extends Phaser.Scene {
                 return; // Salir del update para evitar otros movimientos
             }
         }
-        
+
 
         if (this.moving) {
             return; // No permitir nuevos movimientos mientras el personaje está en movimiento
