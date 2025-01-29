@@ -534,6 +534,31 @@ class GameScene extends Phaser.Scene {
 
         const tileSize = this.tileSize; // Tamaño de un bloque (128 en este caso)
 
+        // Obtener la posición del personaje en la cuadrícula
+        const gridX = Math.floor(this.player.x / tileSize); // Posición en la cuadrícula X
+        const gridY = Math.floor(this.player.y / tileSize); // Posición en la cuadrícula Y
+        const belowGridY = gridY + 1; // Celda justo debajo del personaje
+
+        // Verificar que el personaje no esté ya cayendo y que no esté sobre una escalera
+        if (!this.moving && belowGridY < this.grid[0].length && this.grid[gridX] && this.grid[gridX][belowGridY]) {
+            let fallDistance = 0; // Contador para la altura de la caída
+            let checkY = belowGridY; // Empezamos desde el bloque debajo del personaje
+        
+            // Contar cuántos bloques vacíos hay debajo hasta encontrar un suelo o escalera
+            while (checkY < this.grid[0].length && this.grid[gridX][checkY].type === 'empty') {
+                fallDistance++; // Aumentamos la distancia de caída
+                checkY++; // Revisamos el siguiente bloque hacia abajo
+            }
+        
+            // Si hay al menos un bloque vacío, iniciamos la caída con velocidad proporcional
+            if (fallDistance > 0) {
+                let fallSpeed = Math.max(100, 50 * fallDistance); // Aumenta la velocidad en función de la altura
+                this.startFall(fallDistance, fallSpeed);
+                return; // Salir del update para evitar otros movimientos
+            }
+        }
+        
+
         if (this.moving) {
             return; // No permitir nuevos movimientos mientras el personaje está en movimiento
         }
@@ -552,10 +577,6 @@ class GameScene extends Phaser.Scene {
         }
         // Movimiento hacia arriba
         else if (this.cursors.up.isDown) {
-            const gridX = Math.floor(this.player.x / tileSize); // Posición del jugador en la cuadrícula X
-            const gridY = Math.floor(this.player.y / tileSize); // Posición del jugador en la cuadrícula Y
-
-            // Solo permitir subir si hay una escalera en la celda actual
             if (this.grid[gridX] && this.grid[gridX][gridY] && this.grid[gridX][gridY].type === 'ladder') {
                 if (this.player.y > 0) { // No salir del límite superior
                     this.startMovement(0, -tileSize);
@@ -570,9 +591,6 @@ class GameScene extends Phaser.Scene {
         }
 
         // Lógica para colocar escaleras
-        const gridX = Math.floor(this.player.x / tileSize); // Posición del jugador en la cuadrícula X
-        const gridY = Math.floor(this.player.y / tileSize); // Posición del jugador en la cuadrícula Y
-
         if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
             if (gridY >= 3 && this.grid[gridX] && this.grid[gridX][gridY] && this.grid[gridX][gridY].type === 'empty') {
                 // Colocar una escalera
@@ -710,6 +728,34 @@ class GameScene extends Phaser.Scene {
                 this.moving = false;
             }
         });
+    }
+
+    startFall(fallDistance) {
+        this.moving = true; // Bloquear movimientos manuales mientras cae
+
+        let currentFall = 0; // Contador de bloques caídos
+        let fallSpeed = 200; // Velocidad inicial de caída (milisegundos por bloque)
+
+        const fallStep = () => {
+            if (currentFall < fallDistance) {
+                currentFall++; // Incrementar caída
+
+                // Acelerar la caída conforme más bloques se han recorrido
+                fallSpeed = Math.max(50, fallSpeed * 0.85);
+
+                this.tweens.add({
+                    targets: this.player,
+                    y: this.player.y + this.tileSize,
+                    duration: fallSpeed,
+                    ease: 'Linear',
+                    onComplete: fallStep // Llamar recursivamente hasta completar la caída
+                });
+            } else {
+                this.moving = false; // Permitir movimiento nuevamente al tocar el suelo
+            }
+        };
+
+        fallStep(); // Iniciar la caída
     }
 
     triggerEffect(type) {
