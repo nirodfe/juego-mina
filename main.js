@@ -595,8 +595,8 @@ class GameScene extends Phaser.Scene {
             }
         }
 
-        // Lógica para colocar escaleras
-        if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+        // Lógica para colocar escaleras manteniendo la barra espaciadora
+        if (this.spaceKey.isDown) {
             if (gridY >= 3 && this.grid[gridX] && this.grid[gridX][gridY] && this.grid[gridX][gridY].type === 'empty') {
                 // Colocar una escalera
                 this.grid[gridX][gridY].type = 'ladder'; // Cambiar el tipo del bloque
