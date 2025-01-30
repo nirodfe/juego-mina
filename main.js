@@ -76,6 +76,7 @@ class GameScene extends Phaser.Scene {
         this.load.audio('sonido3', 'assets/sonido3.mp3');
         this.load.audio('sonido4', 'assets/sonido4.mp3');
         this.load.image('ladder', 'assets/escalera.png'); // Ajusta la ruta si es diferente
+        this.load.image('corazon', 'assets/corazon.png'); // Carga el icono del corazón
     }
 
     create() {
@@ -339,16 +340,21 @@ class GameScene extends Phaser.Scene {
         // Barra de vida - fondo gris
         this.healthBarBackground = this.add.graphics()
             .fillStyle(0x444444, 1)
-            .fillRoundedRect(20, 40, 204, 16, 8)
+            .fillRoundedRect(50, 40, 204, 16, 8) // 📌 Movida más a la derecha (X = 100)
             .setScrollFactor(0)
             .setDepth(10);
 
-        // Barra de vida - inicia en verde
         this.healthBar = this.add.graphics()
-            .fillStyle(0x00ff00, 1) // Verde inicial
-            .fillRoundedRect(22, 42, 200, 12, 6)
+            .fillStyle(0x00ff00, 1)
+            .fillRoundedRect(52, 42, 200, 12, 6) // 📌 Movida más a la derecha (X = 102)
             .setScrollFactor(0)
             .setDepth(11);
+
+        this.healthIcon = this.add.image(40, 48, 'corazon') // 📍 Ajustamos posición X e Y
+            .setOrigin(0.5, 0.5) // 🔹 Centrar correctamente el icono
+            .setScale(0.05) // 📏 Tamaño más pequeño y proporcional
+            .setScrollFactor(0) // 📌 Evita que se mueva con la cámara
+            .setDepth(12); // 🔼 Mantenerlo por encima de la barra de vida
 
         // Variable de salud inicial
         this.health = 100;
@@ -555,20 +561,29 @@ class GameScene extends Phaser.Scene {
     }
 
     takeDamage(damage) {
-        this.health = Math.max(0, this.health - damage);
+        const newHealth = Math.max(0, this.health - damage); // Calcular la nueva vida
 
-        let color = 0x00ff00; // Verde
-        if (this.health <= 60) color = 0xffff00; // Amarillo
-        if (this.health <= 30) color = 0xff0000; // Rojo
+        // Animar la reducción de vida gradualmente
+        this.tweens.add({
+            targets: this,
+            health: newHealth,
+            duration: 500, // Tiempo de la animación (en ms)
+            ease: 'Linear',
+            onUpdate: () => {
+                let color = 0x00ff00; // Verde
+                if (this.health <= 60) color = 0xffff00; // Amarillo
+                if (this.health <= 30) color = 0xff0000; // Rojo
 
-        this.healthBar.clear()
-            .fillStyle(color, 1)
-            .fillRoundedRect(22, 42, (this.health / 100) * 200, 12, 6);
-
-        // ☠️ Si la vida llega a 0, llamar a `handleDeath()`
-        if (this.health <= 0) {
-            this.handleDeath();
-        }
+                this.healthBar.clear()
+                    .fillStyle(color, 1)
+                    .fillRoundedRect(52, 42, (this.health / 100) * 200, 12, 6);
+            },
+            onComplete: () => {
+                if (this.health <= 0) {
+                    this.handleDeath();
+                }
+            }
+        });
     }
 
     handleDeath() {
@@ -593,7 +608,7 @@ class GameScene extends Phaser.Scene {
         });
 
         // 🕒 Reiniciar después de 3 segundos
-        this.time.delayedCall(3000, () => {
+        this.time.delayedCall(1000, () => {
             console.log("🔄 Reiniciando...");
             this.resetGame();
         }, [], this);
