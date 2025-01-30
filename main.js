@@ -555,19 +555,60 @@ class GameScene extends Phaser.Scene {
     }
 
     takeDamage(damage) {
-        this.health = Math.max(0, this.health - damage); // Reducir vida sin bajar de 0
+        this.health = Math.max(0, this.health - damage);
 
-        // Determinar el color de la barra de vida
         let color = 0x00ff00; // Verde
         if (this.health <= 60) color = 0xffff00; // Amarillo
         if (this.health <= 30) color = 0xff0000; // Rojo
 
-        // Actualizar la barra de vida
         this.healthBar.clear()
             .fillStyle(color, 1)
             .fillRoundedRect(22, 42, (this.health / 100) * 200, 12, 6);
+
+        // ☠️ Si la vida llega a 0, llamar a `handleDeath()`
+        if (this.health <= 0) {
+            this.handleDeath();
+        }
     }
 
+    handleDeath() {
+        console.log("💀 El personaje ha muerto.");
+
+        // ❌ Evitar que siga moviéndose
+        this.moving = true;
+        this.input.keyboard.enabled = false;
+
+        // 🩸 Mostrar una animación de pantalla roja como efecto de muerte
+        const screenFlash = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0xff0000, 0.5)
+            .setOrigin(0)
+            .setScrollFactor(0)
+            .setDepth(50);
+
+        this.tweens.add({
+            targets: screenFlash,
+            alpha: 0,
+            duration: 1500,
+            ease: 'Power2',
+            onComplete: () => screenFlash.destroy()
+        });
+
+        // 🕒 Reiniciar después de 3 segundos
+        this.time.delayedCall(3000, () => {
+            console.log("🔄 Reiniciando...");
+            this.resetGame();
+        }, [], this);
+    }
+
+    resetGame() {
+        this.health = 100;
+        this.healthBar.clear()
+            .fillStyle(0x00ff00, 1)
+            .fillRoundedRect(22, 42, 200, 12, 6);
+
+        this.player.setPosition(2 * this.tileSize, 2 * this.tileSize); // Reiniciar posición del jugador
+        this.input.keyboard.enabled = true; // Reactivar controles
+        this.moving = false; // Permitir movimiento de nuevo
+    }
 
     update() {
 
