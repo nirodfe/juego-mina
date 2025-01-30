@@ -336,6 +336,23 @@ class GameScene extends Phaser.Scene {
 
         this.cameras.main.startFollow(this.player);
 
+        // Barra de vida - fondo gris
+        this.healthBarBackground = this.add.graphics()
+            .fillStyle(0x444444, 1)
+            .fillRoundedRect(20, 40, 204, 16, 8)
+            .setScrollFactor(0)
+            .setDepth(10);
+
+        // Barra de vida - inicia en verde
+        this.healthBar = this.add.graphics()
+            .fillStyle(0x00ff00, 1) // Verde inicial
+            .fillRoundedRect(22, 42, 200, 12, 6)
+            .setScrollFactor(0)
+            .setDepth(11);
+
+        // Variable de salud inicial
+        this.health = 100;
+
         this.cursors = this.input.keyboard.createCursorKeys();
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
@@ -523,7 +540,41 @@ class GameScene extends Phaser.Scene {
         });
     }
 
+    updateHealthBar() {
+        // Borrar la barra actual para redibujarla
+        this.healthBar.clear();
+
+        // Elegir color según la cantidad de vida
+        let color = 0x00ff00; // Verde (vida alta)
+        if (this.health <= 60) color = 0xffff00; // Amarillo (vida media)
+        if (this.health <= 30) color = 0xff0000; // Rojo (vida baja)
+
+        // Dibujar la nueva barra con la vida actual
+        this.healthBar.fillStyle(color, 1)
+            .fillRoundedRect(22, 22, (this.health / 100) * 200, 12, 6); // Ancho proporcional a la vida
+    }
+
+    takeDamage(damage) {
+        this.health = Math.max(0, this.health - damage); // Reducir vida sin bajar de 0
+
+        // Determinar el color de la barra de vida
+        let color = 0x00ff00; // Verde
+        if (this.health <= 60) color = 0xffff00; // Amarillo
+        if (this.health <= 30) color = 0xff0000; // Rojo
+
+        // Actualizar la barra de vida
+        this.healthBar.clear()
+            .fillStyle(color, 1)
+            .fillRoundedRect(22, 42, (this.health / 100) * 200, 12, 6);
+    }
+
+
     update() {
+
+        if (this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D).isDown) {
+            this.takeDamage(10); // Reducir 10 de vida al presionar "D"
+        }
+
 
         // Si el menú está abierto, detener el personaje y no permitir acciones
         if (this.menuContainer.visible) {
@@ -737,15 +788,12 @@ class GameScene extends Phaser.Scene {
 
     startFall(fallDistance) {
         this.moving = true; // Bloquear movimientos manuales mientras cae
-
-        let currentFall = 0; // Contador de bloques caídos
-        let fallSpeed = 200; // Velocidad inicial de caída (milisegundos por bloque)
+        let currentFall = 0;
+        let fallSpeed = 200;
 
         const fallStep = () => {
             if (currentFall < fallDistance) {
-                currentFall++; // Incrementar caída
-
-                // Acelerar la caída conforme más bloques se han recorrido
+                currentFall++;
                 fallSpeed = Math.max(50, fallSpeed * 0.85);
 
                 this.tweens.add({
@@ -753,14 +801,23 @@ class GameScene extends Phaser.Scene {
                     y: this.player.y + this.tileSize,
                     duration: fallSpeed,
                     ease: 'Linear',
-                    onComplete: fallStep // Llamar recursivamente hasta completar la caída
+                    onComplete: () => {
+                        if (currentFall < fallDistance) {
+                            fallStep();
+                        } else {
+                            // **Aplicar daño después de la caída**
+                            if (fallDistance > 3) {
+                                let damage = (fallDistance - 3) * 10;
+                                this.takeDamage(damage);
+                            }
+                            this.moving = false;
+                        }
+                    }
                 });
-            } else {
-                this.moving = false; // Permitir movimiento nuevamente al tocar el suelo
             }
         };
 
-        fallStep(); // Iniciar la caída
+        fallStep();
     }
 
     triggerEffect(type) {
