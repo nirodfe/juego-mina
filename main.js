@@ -116,90 +116,110 @@ class GameScene extends Phaser.Scene {
             }
         }
 
+        // Definir las capas donde aparecen los minerales
+        this.mineralSpawnLayers = {
+            carbon: { min: 3, max: 100, count: 900 },   // 🟤 Carbón: desde la primera capa de piedra
+            cobre: { min: 10, max: 80, count: 700 },    // 🟠 Cobre: más profundo que el carbón
+            hierro: { min: 25, max: 120, count: 600 },  // 🔩 Hierro: aparece después del cobre
+            plata: { min: 40, max: 150, count: 500 },   // 🥈 Plata: empieza más profundo que antes
+            oro: { min: 60, max: 175, count: 350 },     // 🟡 Oro: solo en las capas bajas
+            rubi: { min: 80, max: 175, count: 250 },    // ❤️ Rubí: sigue siendo raro y profundo
+            esmeralda: { min: 100, max: 175, count: 180 },  // 💚 Esmeralda: aún más raro
+            diamante: { min: 125, max: 175, count: 120 }   // 💎 Diamante: el más raro y profundo
+        };
+
+        // Generar Carbon (Comienza desde la primera capa de piedra)
         let carbonCount = 900;
         while (carbonCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1); // Coordenada X aleatoria
-            const y = Phaser.Math.Between(6, gridSize - 1); // Coordenada Y aleatoria (zona de piedra)
+            const x = Phaser.Math.Between(0, gridSize - 1);
+            const y = Phaser.Math.Between(3, gridSize - 1); // 📌 Antes empezaba en 6, ahora en 3
 
             if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'carbon'; // Cambiar el tipo a carbón
+                this.grid[x][y].type = 'carbon';
                 carbonCount--;
             }
         }
 
-        let cobreCount = 800;
+        // Generar Cobre (Aparece un poco más profundo)
+        let cobreCount = 700;
         while (cobreCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1); // Coordenada X aleatoria
-            const y = Phaser.Math.Between(6, gridSize - 1); // Coordenada Y aleatoria (zona de piedra)
+            const x = Phaser.Math.Between(0, gridSize - 1);
+            const y = Phaser.Math.Between(10, gridSize - 1); // 📌 Ahora empieza en 10 en vez de 15
 
             if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'cobre'; // Cambiar el tipo a cobre
+                this.grid[x][y].type = 'cobre';
                 cobreCount--;
             }
         }
 
-        let hierroCount = 700; // Cantidad de bloques de hierro
+        // Generar Hierro
+        let hierroCount = 600;
         while (hierroCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1); // Coordenada X aleatoria
-            const y = Phaser.Math.Between(11, gridSize - 1); // Coordenada Y aleatoria (zona de piedra)
+            const x = Phaser.Math.Between(0, gridSize - 1);
+            const y = Phaser.Math.Between(25, gridSize - 1); // 📌 Antes 30, ahora 25 para no estar tan profundo
 
             if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'hierro'; // Cambiar el tipo a hierro
+                this.grid[x][y].type = 'hierro';
                 hierroCount--;
             }
         }
 
-        let plataCount = 600; // Cantidad de bloques de plata
+        // Generar Plata
+        let plataCount = 500;
         while (plataCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1); // Coordenada X aleatoria
-            const y = Phaser.Math.Between(6, gridSize - 1); // Coordenada Y aleatoria (zona de piedra)
+            const x = Phaser.Math.Between(0, gridSize - 1);
+            const y = Phaser.Math.Between(40, gridSize - 1);
 
             if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'plata'; // Cambiar el tipo a plata
+                this.grid[x][y].type = 'plata';
                 plataCount--;
             }
         }
 
-        let oroCount = 500; // Cantidad de bloques de oro
+        // Generar Oro
+        let oroCount = 350;
         while (oroCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1); // Coordenada X aleatoria
-            const y = Phaser.Math.Between(6, gridSize - 1); // Coordenada Y aleatoria (zona de piedra)
+            const x = Phaser.Math.Between(0, gridSize - 1);
+            const y = Phaser.Math.Between(60, gridSize - 1);
 
             if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'oro'; // Cambiar el tipo a oro
+                this.grid[x][y].type = 'oro';
                 oroCount--;
             }
         }
 
-        let rubiCount = 350; // Cantidad de bloques de rubí
+        // Generar Rubí
+        let rubiCount = 250;
         while (rubiCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1); // Coordenada X aleatoria
-            const y = Phaser.Math.Between(6, gridSize - 1); // Coordenada Y aleatoria (zona de piedra)
+            const x = Phaser.Math.Between(0, gridSize - 1);
+            const y = Phaser.Math.Between(80, gridSize - 1);
 
             if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'rubi'; // Cambiar el tipo a rubí
+                this.grid[x][y].type = 'rubi';
                 rubiCount--;
             }
         }
 
-        let esmeraldaCount = 250; // Cantidad de bloques de esmeralda
+        // Generar Esmeralda
+        let esmeraldaCount = 180;
         while (esmeraldaCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1); // Coordenada X aleatoria
-            const y = Phaser.Math.Between(6, gridSize - 1); // Coordenada Y aleatoria (zona de piedra)
+            const x = Phaser.Math.Between(0, gridSize - 1);
+            const y = Phaser.Math.Between(100, gridSize - 1);
 
             if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'esmeralda'; // Cambiar el tipo a esmeralda
+                this.grid[x][y].type = 'esmeralda';
                 esmeraldaCount--;
             }
         }
 
-        let diamanteCount = 100; // Cantidad de bloques de diamante
+        // Generar Diamante
+        let diamanteCount = 120;
         while (diamanteCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1); // Coordenada X aleatoria
-            const y = Phaser.Math.Between(6, gridSize - 1); // Coordenada Y aleatoria (zona de piedra)
+            const x = Phaser.Math.Between(0, gridSize - 1);
+            const y = Phaser.Math.Between(125, gridSize - 1);
 
             if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'diamante'; // Cambiar el tipo a diamante
+                this.grid[x][y].type = 'diamante';
                 diamanteCount--;
             }
         }
