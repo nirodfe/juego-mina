@@ -128,13 +128,13 @@ class GameScene extends Phaser.Scene {
             diamante: { min: 125, max: 175, count: 120 }   // 💎 Diamante: el más raro y profundo
         };
 
-        // Generar Carbon (Comienza desde la primera capa de piedra)
+        // Generar Carbon (Desde la primera capa de piedra hasta la capa 80)
         let carbonCount = 900;
         while (carbonCount > 0) {
             const x = Phaser.Math.Between(0, gridSize - 1);
-            const y = Phaser.Math.Between(3, gridSize - 1); // 📌 Antes empezaba en 6, ahora en 3
+            const y = Phaser.Math.Between(3, 100);
 
-            if (this.grid[x][y].type === 'piedra') {
+            if (this.grid[x] && this.grid[x][y] && this.grid[x][y].type === 'piedra') {
                 this.grid[x][y].type = 'carbon';
                 carbonCount--;
             }
@@ -144,7 +144,7 @@ class GameScene extends Phaser.Scene {
         let cobreCount = 700;
         while (cobreCount > 0) {
             const x = Phaser.Math.Between(0, gridSize - 1);
-            const y = Phaser.Math.Between(10, gridSize - 1); // 📌 Ahora empieza en 10 en vez de 15
+            const y = Phaser.Math.Between(10, 80); // 📌 Ahora empieza en 10 en vez de 15
 
             if (this.grid[x][y].type === 'piedra') {
                 this.grid[x][y].type = 'cobre';
@@ -156,7 +156,7 @@ class GameScene extends Phaser.Scene {
         let hierroCount = 600;
         while (hierroCount > 0) {
             const x = Phaser.Math.Between(0, gridSize - 1);
-            const y = Phaser.Math.Between(25, gridSize - 1); // 📌 Antes 30, ahora 25 para no estar tan profundo
+            const y = Phaser.Math.Between(25, 120); // 📌 Antes 30, ahora 25 para no estar tan profundo
 
             if (this.grid[x][y].type === 'piedra') {
                 this.grid[x][y].type = 'hierro';
@@ -168,7 +168,7 @@ class GameScene extends Phaser.Scene {
         let plataCount = 500;
         while (plataCount > 0) {
             const x = Phaser.Math.Between(0, gridSize - 1);
-            const y = Phaser.Math.Between(40, gridSize - 1);
+            const y = Phaser.Math.Between(40, 150); // 📌 Antes 50, ahora 40 para no estar tan profundo
 
             if (this.grid[x][y].type === 'piedra') {
                 this.grid[x][y].type = 'plata';
