@@ -564,6 +564,32 @@ class GameScene extends Phaser.Scene {
                 this.input.keyboard.resetKeys(); // Reiniciar teclas
             }
         });
+
+        // Crear el fondo semitransparente detrás del texto de coordenadas
+        this.coordinatesBackground = this.add.graphics();
+        this.coordinatesBackground.fillStyle(0x000000, 0.5); // Color negro con 50% de transparencia
+        const textWidth = 150; // Ajusta el ancho del fondo según el texto
+        const textHeight = 40;
+        this.coordinatesBackground.fillRoundedRect(
+            (this.cameras.main.width / 2) - (textWidth / 2), // Centrar en X
+            5, // Margen superior
+            textWidth,
+            textHeight,
+            10
+        );
+        this.coordinatesBackground.setScrollFactor(0).setDepth(99); // Fijarlo en la pantalla y ponerlo detrás del texto
+
+        this.coordinatesText = this.add.text(
+            this.cameras.main.width / 2, // Centrado en X
+            10, // Margen desde la parte superior
+            'X: 0, Y: 0',
+            {
+                fontSize: '20px',
+                fill: '#ffffff',
+                fontFamily: 'Arial',
+                fontStyle: 'bold'
+            }
+        ).setOrigin(0.5, 0).setScrollFactor(0).setDepth(100);
     }
 
     updateHealthBar() {
@@ -733,6 +759,9 @@ class GameScene extends Phaser.Scene {
                     .setDepth(1); // Establecer una profundidad baja para la escalera
             }
         }
+
+        // Actualizar las coordenadas del jugador en el cartel
+        this.coordinatesText.setText(`X: ${Math.floor(this.player.x / this.tileSize)}, Y: ${Math.floor(this.player.y / this.tileSize)}`);
     }
 
     playNextSound() {
