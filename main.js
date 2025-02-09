@@ -86,6 +86,7 @@ class GameScene extends Phaser.Scene {
         this.load.image('icono_rubi', 'assets/icono_rubi.png');
         this.load.image('icono_esmeralda', 'assets/icono_esmeralda.png');
         this.load.image('icono_diamante', 'assets/icono_diamante.png');
+        this.load.image('icono_moneda', 'assets/icono_moneda.png'); // Ruta del icono de monedaf
     }
 
     create() {
@@ -711,13 +712,13 @@ class GameScene extends Phaser.Scene {
 
     abrirMenuTienda() {
         if (this.menuTiendaContainer.visible) return; // Si ya está abierto, no hacer nada
-    
+
         console.log("🟢 Abriendo menú de la tienda...");
-    
+
         const borde = 38; // 1 cm en píxeles
         const menuAncho = this.cameras.main.width - 2 * borde;
         const menuAlto = this.cameras.main.height - 2 * borde;
-    
+
         // Crear el borde marrón
         if (!this.menuBorde) {
             this.menuBorde = this.add.rectangle(0, 0, menuAncho, menuAlto, 0xFFF0C9, 1) // Marrón oscuro
@@ -727,7 +728,7 @@ class GameScene extends Phaser.Scene {
         } else {
             this.menuBorde.setSize(menuAncho, menuAlto);
         }
-    
+
         // Agregar el título "Tienda"
         if (!this.menuTitulo) {
             this.menuTitulo = this.add.text(0, -menuAlto / 2 + 40, "Tienda", {
@@ -740,7 +741,7 @@ class GameScene extends Phaser.Scene {
                 .setDepth(22);
             this.menuTiendaContainer.add(this.menuTitulo);
         }
-    
+
         // Agregar el subtítulo "VENDER" debajo de "Tienda"
         if (!this.menuSubtitulo) {
             this.menuSubtitulo = this.add.text(0, -menuAlto / 2 + 90, "VENDER", {
@@ -753,88 +754,110 @@ class GameScene extends Phaser.Scene {
                 .setDepth(22);
             this.menuTiendaContainer.add(this.menuSubtitulo);
         }
-    
+
         // Centrar el menú respecto a la cámara y el mundo
         this.menuTiendaContainer.setPosition(
             this.cameras.main.scrollX + this.cameras.main.width / 2,
             this.cameras.main.scrollY + this.cameras.main.height / 2
         );
-    
+
         // Detener el personaje completamente al abrir la tienda
         this.player.setVelocity(0, 0); // Para por completo cualquier movimiento
         this.moving = false; // Reiniciar el estado de movimiento
-    
+
         // Desactivar las teclas de movimiento, pero mantener la barra espaciadora
         this.cursors.left.enabled = false;
         this.cursors.right.enabled = false;
         this.cursors.up.enabled = false;
         this.cursors.down.enabled = false;
-    
-        // Definir los minerales con sus imágenes
+
+        // Definir los minerales con sus imágenes y valores
         const minerales = [
-            "carbon", "cobre", "hierro", "plata",
-            "oro", "rubi", "esmeralda", "diamante"
+            { nombre: "carbon", valor: 1 },
+            { nombre: "cobre", valor: 2 },
+            { nombre: "hierro", valor: 5 },
+            { nombre: "plata", valor: 10 },
+            { nombre: "oro", valor: 25 },
+            { nombre: "rubi", valor: 35 },
+            { nombre: "esmeralda", valor: 50 },
+            { nombre: "diamante", valor: 75 }
         ];
-    
+
         // Crear contenedor para los botones
         if (!this.menuVenta) {
             this.menuVenta = this.add.container(0, 0).setDepth(22).setVisible(true);
             this.menuTiendaContainer.add(this.menuVenta);
-    
+
             const columnas = 4;  // 4 columnas
             const filas = 2;     // 2 filas
             const espacioX = menuAncho / columnas; // Espacio horizontal
             const espacioY = menuAlto / filas;   // Espacio vertical
-    
+
             for (let i = 0; i < minerales.length; i++) {
                 const columna = i % columnas;
                 const fila = Math.floor(i / columnas);
-    
+
                 const xPos = -menuAncho / 2 + espacioX * columna + espacioX / 2;
                 const yPos = -menuAlto / 2 + espacioY * fila + espacioY / 2;
-    
+
                 // Crear botón con el icono del mineral
-                const boton = this.add.image(xPos, yPos, `icono_${minerales[i]}`)
+                const boton = this.add.image(xPos, yPos, `icono_${minerales[i].nombre}`)
                     .setOrigin(0.5)
                     .setDisplaySize(espacioX * 0.75, espacioY * 0.75) // Ajusta al tamaño de la cuadrícula
                     .setInteractive({ useHandCursor: true });
-    
+
                 // Evento de clic para vender el mineral
                 boton.on('pointerdown', () => {
-                    console.log(`🟢 Vendiendo ${minerales[i]}`);
-                    this.venderMineral(minerales[i]); // Implementación de la venta
+                    console.log(`🟢 Vendiendo ${minerales[i].nombre}`);
+                    this.venderMineral(minerales[i].nombre);
                 });
-    
+
+                // Texto con el valor de la moneda (sin "Valor:")
+                const textoNumero = this.add.text(xPos - 2, yPos + 110, `${minerales[i].valor}`, {
+                    fontSize: "24px",
+                    fill: "#000000",
+                    fontStyle: "bold",
+                    fontFamily: "Arial"
+                }).setOrigin(1, 0.5).setDepth(23);
+
+                // Icono de moneda después del número
+                const monedaIcono = this.add.image(xPos + 2, yPos + 110, "icono_moneda") // Usar la moneda que generamos antes
+                    .setOrigin(0, 0.5)
+                    .setDisplaySize(35, 35) // Ajustar tamaño del icono de moneda
+                    .setDepth(23);
+
                 this.menuVenta.add(boton);
+                this.menuVenta.add(textoNumero);
+                this.menuVenta.add(monedaIcono);
             }
         }
-    
+
         this.menuTiendaContainer.setVisible(true);
         this.physics.world.pause(); // Pausar el mundo físico
         this.cameras.main.stopFollow(); // Detener el seguimiento de la cámara
     }
-    
+
     // 🔴 Al cerrar el menú, permitir nuevamente el movimiento
     cerrarMenuTienda() {
         if (!this.menuTiendaContainer.visible) return; // Si ya está cerrado, no hacer nada
-    
+
         console.log("🔴 Cerrando menú de la tienda...");
-    
+
         this.menuTiendaContainer.setVisible(false); // Ocultar el menú de la tienda
         this.physics.world.resume(); // Reanudar el mundo físico
         this.cameras.main.startFollow(this.player); // Volver a seguir al jugador
-    
+
         // Asegurar que el personaje no tenga movimiento residual
         this.player.setVelocity(0, 0);
         this.moving = false;
-    
+
         // Reactivar movimiento del personaje
         this.cursors.left.enabled = true;
         this.cursors.right.enabled = true;
         this.cursors.up.enabled = true;
         this.cursors.down.enabled = true;
     }
-    
+
     // Función para vender un mineral
     venderMineral(tipo) {
         if (this[tipo + "Count"] > 0) { // Asegurar que el jugador tiene minerales
@@ -846,12 +869,21 @@ class GameScene extends Phaser.Scene {
     }
 
     update() {
-        // Si el menú está abierto, detener el personaje y no permitir acciones
-        if (this.menuContainer.visible) {
-            this.player.setVelocity(0, 0); // Detener cualquier movimiento físico
-            this.moving = false; // Reiniciar el estado de movimiento
-            return; // Salir del método update mientras el menú esté abierto
+        // Si el menú de la tienda está abierto, detener el personaje pero permitir cerrar el menú
+        if (this.menuTiendaContainer.visible) {
+            this.player.setVelocity(0, 0);
+            this.moving = false;
+
+            // Permitir cerrar la tienda con la barra espaciadora
+            if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+                this.cerrarMenuTienda();
+            }
+
+            return; // Evitar que se ejecute cualquier otro código de movimiento
         }
+
+        // Si el personaje ya está en movimiento, no hacer nada más
+        if (this.moving) return;
 
         const tileSize = this.tileSize; // Tamaño de un bloque (128 en este caso)
 
