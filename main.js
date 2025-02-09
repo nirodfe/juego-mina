@@ -562,20 +562,35 @@ class GameScene extends Phaser.Scene {
         // Añadir el texto de esmeraldas al contenedor del menú
         this.menuContainer.add(this.esmeraldaText);
 
-        // Añade este texto al contenedor del menú
+        // Añade este texto de rubí al contenedor del menú
         this.menuContainer.add(this.rubiText);
 
-        // Añadir el texto al contenedor del menú
+        // Añadir el textode oro al contenedor del menú
         this.menuContainer.add(this.oroText);
 
         // Añadir el texto de plata al contenedor del menú
         this.menuContainer.add(this.plataText);
 
-        this.menuContainer.add(this.hierroText); // Añadir al contenedor del menú
+        // Añadir el texto de hierro al contenedor del menú
+        this.menuContainer.add(this.hierroText);
 
+        // Añadir el texto de cobre al contenedor del menú
+        this.menuContainer.add(this.cobreText);
 
-        // Añadir los textos deseados al contenedor del menú
-        this.menuContainer.add([this.carbonText, this.cobreText]);
+        // Añadir el texto de carbón al contenedor del menú
+        this.menuContainer.add(this.carbonText);
+
+        // Guardar referencias a los textos en un objeto para acceder a ellos fácilmente
+        this.mineralTextos = {
+            carbon: this.carbonText,
+            cobre: this.cobreText,
+            hierro: this.hierroText,
+            plata: this.plataText,
+            oro: this.oroText,
+            rubi: this.rubiText,
+            esmeralda: this.esmeraldaText,
+            diamante: this.diamanteText
+        };
 
         // Añadir el botón de la mochila
         const mochilaButton = this.add.image(
@@ -891,12 +906,41 @@ class GameScene extends Phaser.Scene {
 
     // Función para vender un mineral
     venderMineral(tipo) {
-        if (this[tipo + "Count"] > 0) { // Asegurar que el jugador tiene minerales
-            this[tipo + "Count"]--; // Restar 1
-            console.log(`💰 Vendido: ${tipo}. Ahora tienes ${this[tipo + "Count"]}`);
+        if (this[tipo + "Count"] > 0) { // Verificar que el jugador tiene minerales
+            this[tipo + "Count"]--; // Restar 1 unidad del mineral
+            this.monedas = (this.monedas || 0) + this.obtenerValorMineral(tipo); // Sumar el valor al contador de monedas
+
+            // Asegurar que el contador de monedas sigue visible y actualizado
+            if (this.monedaTexto && this.monedaIcono) {
+                this.monedaTexto.setText(this.monedas.toString()); // Convertir a string para evitar NaN
+                this.monedaTexto.setVisible(true);
+                this.monedaIcono.setVisible(true);
+            }
+
+            // 📌 **Actualizar el texto en la mochila incluso cuando llega a 0**
+            if (this.mineralTextos[tipo]) {
+                this.mineralTextos[tipo].setText(`${tipo.charAt(0).toUpperCase() + tipo.slice(1)}: ${this[tipo + "Count"]}`);
+            }
+
+            console.log(`💰 Vendido: ${tipo}. Ahora tienes ${this[tipo + "Count"]} y ${this.monedas} monedas.`);
         } else {
             console.log(`❌ No tienes suficiente ${tipo} para vender.`);
         }
+    }
+
+    // Función auxiliar para obtener el valor de cada mineral
+    obtenerValorMineral(tipo) {
+        const valores = {
+            carbon: 1,
+            cobre: 2,
+            hierro: 5,
+            plata: 10,
+            oro: 25,
+            rubi: 35,
+            esmeralda: 50,
+            diamante: 75
+        };
+        return valores[tipo] || 0; // Retorna 0 si el mineral no está en la lista
     }
 
     update() {
