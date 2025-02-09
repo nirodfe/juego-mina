@@ -78,6 +78,14 @@ class GameScene extends Phaser.Scene {
         this.load.image('ladder', 'assets/escalera.png'); // Ajusta la ruta si es diferente
         this.load.image('corazon', 'assets/corazon.png'); // Carga el icono del corazón
         this.load.image('tienda', 'assets/shop.png'); // Asegúrate de que el nombre del archivo sea correcto
+        this.load.image('icono_carbon', 'assets/icono_carbon.png');
+        this.load.image('icono_cobre', 'assets/icono_cobre.png');
+        this.load.image('icono_hierro', 'assets/icono_hierro.png');
+        this.load.image('icono_plata', 'assets/icono_plata.png');
+        this.load.image('icono_oro', 'assets/icono_oro.png');
+        this.load.image('icono_rubi', 'assets/icono_rubi.png');
+        this.load.image('icono_esmeralda', 'assets/icono_esmeralda.png');
+        this.load.image('icono_diamante', 'assets/icono_diamante.png');
     }
 
     create() {
@@ -719,7 +727,7 @@ class GameScene extends Phaser.Scene {
         } else {
             this.menuBorde.setSize(menuAncho, menuAlto);
         }
-        
+
         // Agregar el título "Tienda"
         if (!this.menuTitulo) {
             this.menuTitulo = this.add.text(0, -menuAlto / 2 + 40, "Tienda", {
@@ -733,17 +741,79 @@ class GameScene extends Phaser.Scene {
             this.menuTiendaContainer.add(this.menuTitulo);
         }
 
+        // Agregar el subtítulo "VENDER" debajo de "Tienda"
+        if (!this.menuSubtitulo) {
+            this.menuSubtitulo = this.add.text(0, -menuAlto / 2 + 90, "VENDER", {
+                fontSize: "32px",
+                fill: "#444444", // Gris oscuro
+                fontStyle: "bold",
+                fontFamily: "Arial"
+            })
+                .setOrigin(0.5)
+                .setDepth(22);
+            this.menuTiendaContainer.add(this.menuSubtitulo);
+        }
+
         // Centrar el menú respecto a la cámara y el mundo
         this.menuTiendaContainer.setPosition(
             this.cameras.main.scrollX + this.cameras.main.width / 2,
             this.cameras.main.scrollY + this.cameras.main.height / 2
         );
 
+        // Definir los minerales con sus imágenes
+        const minerales = [
+            "carbon", "cobre", "hierro", "plata",
+            "oro", "rubi", "esmeralda", "diamante"
+        ];
+
+        // Crear contenedor para los botones
+        if (!this.menuVenta) {
+            this.menuVenta = this.add.container(0, 0).setDepth(22).setVisible(true);
+            this.menuTiendaContainer.add(this.menuVenta);
+
+            const columnas = 4;  // 4 columnas
+            const filas = 2;     // 2 filas
+            const espacioX = menuAncho / columnas; // Espacio horizontal
+            const espacioY = menuAlto / filas;   // Espacio vertical
+
+            for (let i = 0; i < minerales.length; i++) {
+                const columna = i % columnas;
+                const fila = Math.floor(i / columnas);
+
+                const xPos = -menuAncho / 2 + espacioX * columna + espacioX / 2;
+                const yPos = -menuAlto / 2 + espacioY * fila + espacioY / 2;
+
+                // Crear botón con el icono del mineral
+                const boton = this.add.image(xPos, yPos, `icono_${minerales[i]}`)
+                    .setOrigin(0.5)
+                    .setDisplaySize(espacioX * 0.9, espacioY * 0.9) // Ajusta al tamaño de la cuadrícula
+                    .setInteractive({ useHandCursor: true });
+
+                // Evento de clic para vender el mineral
+                boton.on('pointerdown', () => {
+                    console.log(`🟢 Vendiendo ${minerales[i]}`);
+                    this.venderMineral(minerales[i]); // Aquí debes implementar la función de venta
+                });
+
+                this.menuVenta.add(boton);
+            }
+        }
+
         this.menuTiendaContainer.setVisible(true);
         this.physics.world.pause(); // Pausar el mundo físico
         this.cameras.main.stopFollow(); // Detener el seguimiento de la cámara
-    }
 
+        // **🔹 Desactivar movimiento, pero mantener la barra espaciadora activa**
+        this.player.setVelocity(0, 0);
+        this.moving = false;
+
+        this.cursors.left.enabled = false;
+        this.cursors.right.enabled = false;
+        this.cursors.up.enabled = false;
+        this.cursors.down.enabled = false;
+
+        // No desactivamos la barra espaciadora para que pueda cerrar el menú
+    }
 
     cerrarMenuTienda() {
         if (!this.menuTiendaContainer.visible) return; // Si ya está cerrado, no hacer nada
@@ -755,6 +825,12 @@ class GameScene extends Phaser.Scene {
         this.cameras.main.startFollow(this.player); // Volver a seguir al jugador
         this.player.setVelocity(0, 0); // Detener cualquier movimiento residual
         this.moving = false; // Permitir movimiento de nuevo
+
+        // **🔹 Reactivar movimiento**
+        this.cursors.left.enabled = true;
+        this.cursors.right.enabled = true;
+        this.cursors.up.enabled = true;
+        this.cursors.down.enabled = true;
     }
 
     update() {
