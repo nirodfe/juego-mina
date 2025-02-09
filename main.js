@@ -413,6 +413,29 @@ class GameScene extends Phaser.Scene {
             this.cameras.main.scrollY + this.cameras.main.height / 2
         );
 
+        // Inicializar el contador de monedas
+        this.monedaCount = 0;
+
+        // Crear el icono de moneda en la esquina superior derecha
+        this.monedaIcono = this.add.image(this.cameras.main.width - 50, 60, "icono_moneda")
+            .setOrigin(1, 0.5)
+            .setDisplaySize(35, 35) // Ajustar tamaño del icono
+            .setScrollFactor(0) // Fijarlo a la pantalla
+            .setDepth(100)
+            .setVisible(false); // Inicialmente oculto
+
+        // Crear el texto de monedas al lado del icono
+        this.monedaTexto = this.add.text(this.cameras.main.width - 100, 62, "0", {
+            fontSize: "32px",
+            fill: "#000000",
+            fontStyle: "bold",
+            fontFamily: "Arial"
+        })
+            .setOrigin(1, 0.5)
+            .setDepth(100)
+            .setScrollFactor(0)
+            .setVisible(false); // Inicialmente oculto
+
         // Tamaño deseado del botón
         const buttonSize = 100;
 
@@ -715,6 +738,10 @@ class GameScene extends Phaser.Scene {
 
         console.log("🟢 Abriendo menú de la tienda...");
 
+        // Mostrar el contador de monedas al abrir la tienda
+        this.monedaIcono.setVisible(true);
+        this.monedaTexto.setVisible(true);
+
         const borde = 38; // 1 cm en píxeles
         const menuAncho = this.cameras.main.width - 2 * borde;
         const menuAlto = this.cameras.main.height - 2 * borde;
@@ -798,12 +825,12 @@ class GameScene extends Phaser.Scene {
                 const fila = Math.floor(i / columnas);
 
                 const xPos = -menuAncho / 2 + espacioX * columna + espacioX / 2;
-                const yPos = -menuAlto / 2 + espacioY * fila + espacioY / 2;
+                const yPos = -menuAlto / 2.2 + espacioY * fila + espacioY / 2;
 
                 // Crear botón con el icono del mineral
                 const boton = this.add.image(xPos, yPos, `icono_${minerales[i].nombre}`)
                     .setOrigin(0.5)
-                    .setDisplaySize(espacioX * 0.75, espacioY * 0.75) // Ajusta al tamaño de la cuadrícula
+                    .setDisplaySize(espacioX * 0.55, espacioY * 0.55) // Ajusta al tamaño de la cuadrícula
                     .setInteractive({ useHandCursor: true });
 
                 // Evento de clic para vender el mineral
@@ -813,7 +840,7 @@ class GameScene extends Phaser.Scene {
                 });
 
                 // Texto con el valor de la moneda (sin "Valor:")
-                const textoNumero = this.add.text(xPos - 2, yPos + 110, `${minerales[i].valor}`, {
+                const textoNumero = this.add.text(xPos - 2, yPos + 92, `${minerales[i].valor}`, {
                     fontSize: "24px",
                     fill: "#000000",
                     fontStyle: "bold",
@@ -821,7 +848,7 @@ class GameScene extends Phaser.Scene {
                 }).setOrigin(1, 0.5).setDepth(23);
 
                 // Icono de moneda después del número
-                const monedaIcono = this.add.image(xPos + 2, yPos + 110, "icono_moneda") // Usar la moneda que generamos antes
+                const monedaIcono = this.add.image(xPos + 2, yPos + 90, "icono_moneda") // Usar la moneda que generamos antes
                     .setOrigin(0, 0.5)
                     .setDisplaySize(35, 35) // Ajustar tamaño del icono de moneda
                     .setDepth(23);
@@ -842,6 +869,10 @@ class GameScene extends Phaser.Scene {
         if (!this.menuTiendaContainer.visible) return; // Si ya está cerrado, no hacer nada
 
         console.log("🔴 Cerrando menú de la tienda...");
+
+        // Ocultar el contador de monedas al cerrar la tienda
+        this.monedaIcono.setVisible(false);
+        this.monedaTexto.setVisible(false);
 
         this.menuTiendaContainer.setVisible(false); // Ocultar el menú de la tienda
         this.physics.world.resume(); // Reanudar el mundo físico
