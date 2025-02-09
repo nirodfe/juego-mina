@@ -77,6 +77,7 @@ class GameScene extends Phaser.Scene {
         this.load.audio('sonido4', 'assets/sonido4.mp3');
         this.load.image('ladder', 'assets/escalera.png'); // Ajusta la ruta si es diferente
         this.load.image('corazon', 'assets/corazon.png'); // Carga el icono del corazón
+        this.load.image('tienda', 'assets/shop.png'); // Asegúrate de que el nombre del archivo sea correcto
     }
 
     create() {
@@ -382,6 +383,27 @@ class GameScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
+        // Crear el contenedor del menú de la tienda
+        this.menuTiendaContainer = this.add.container(0, 0).setVisible(false).setDepth(20);
+
+        // Crear fondo del menú de la tienda
+        const borde = 38; // 1 cm en píxeles
+        const menuAncho = this.cameras.main.width - 2 * borde;
+        const menuAlto = this.cameras.main.height - 2 * borde;
+
+        this.menuFondo = this.add.rectangle(0, 0, menuAncho, menuAlto, 0x000000, 0.8)
+            .setOrigin(0.5)
+            .setDepth(20)
+            .setInteractive();
+
+        this.menuTiendaContainer.add(this.menuFondo);
+
+        // Centrar el menú en la pantalla
+        this.menuTiendaContainer.setPosition(
+            this.cameras.main.scrollX + this.cameras.main.width / 2,
+            this.cameras.main.scrollY + this.cameras.main.height / 2
+        );
+
         // Tamaño deseado del botón
         const buttonSize = 100;
 
@@ -590,6 +612,14 @@ class GameScene extends Phaser.Scene {
                 fontStyle: 'bold'
             }
         ).setOrigin(0.5, 0).setScrollFactor(0).setDepth(100);
+
+        const posicionXTienda = 7 * this.tileSize; // Convertir coordenada de la cuadrícula a píxeles
+        const posicionYTienda = 3 * this.tileSize; // La tienda debe estar en la superficie
+
+        this.tienda = this.add.image(posicionXTienda, posicionYTienda, 'tienda')
+            .setOrigin(0, 1) // La base de la tienda toca el suelo
+            .setDepth(4) // Asegurar que esté por encima de otros objetos
+            .setDisplaySize(this.tileSize * 3, this.tileSize * 3); // Ajustar tamaño si es necesario
     }
 
     updateHealthBar() {
@@ -671,13 +701,63 @@ class GameScene extends Phaser.Scene {
         this.moving = false; // Permitir movimiento de nuevo
     }
 
-    update() {
+    abrirMenuTienda() {
+        if (this.menuTiendaContainer.visible) return; // Si ya está abierto, no hacer nada
 
-        if (this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D).isDown) {
-            this.takeDamage(10); // Reducir 10 de vida al presionar "D"
+        console.log("🟢 Abriendo menú de la tienda...");
+
+        const borde = 38; // 1 cm en píxeles
+        const menuAncho = this.cameras.main.width - 2 * borde;
+        const menuAlto = this.cameras.main.height - 2 * borde;
+
+        // Crear el borde marrón
+        if (!this.menuBorde) {
+            this.menuBorde = this.add.rectangle(0, 0, menuAncho, menuAlto, 0xFFF0C9, 1) // Marrón oscuro
+                .setOrigin(0.5)
+                .setDepth(20);
+            this.menuTiendaContainer.add(this.menuBorde);
+        } else {
+            this.menuBorde.setSize(menuAncho, menuAlto);
+        }
+        
+        // Agregar el título "Tienda"
+        if (!this.menuTitulo) {
+            this.menuTitulo = this.add.text(0, -menuAlto / 2 + 40, "Tienda", {
+                fontSize: "48px",
+                fill: "#000000", // Negro
+                fontStyle: "bold",
+                fontFamily: "Arial"
+            })
+                .setOrigin(0.5)
+                .setDepth(22);
+            this.menuTiendaContainer.add(this.menuTitulo);
         }
 
+        // Centrar el menú respecto a la cámara y el mundo
+        this.menuTiendaContainer.setPosition(
+            this.cameras.main.scrollX + this.cameras.main.width / 2,
+            this.cameras.main.scrollY + this.cameras.main.height / 2
+        );
 
+        this.menuTiendaContainer.setVisible(true);
+        this.physics.world.pause(); // Pausar el mundo físico
+        this.cameras.main.stopFollow(); // Detener el seguimiento de la cámara
+    }
+
+
+    cerrarMenuTienda() {
+        if (!this.menuTiendaContainer.visible) return; // Si ya está cerrado, no hacer nada
+
+        console.log("🔴 Cerrando menú de la tienda...");
+
+        this.menuTiendaContainer.setVisible(false); // Ocultar el menú de la tienda
+        this.physics.world.resume(); // Reanudar el mundo físico
+        this.cameras.main.startFollow(this.player); // Volver a seguir al jugador
+        this.player.setVelocity(0, 0); // Detener cualquier movimiento residual
+        this.moving = false; // Permitir movimiento de nuevo
+    }
+
+    update() {
         // Si el menú está abierto, detener el personaje y no permitir acciones
         if (this.menuContainer.visible) {
             this.player.setVelocity(0, 0); // Detener cualquier movimiento físico
@@ -745,6 +825,21 @@ class GameScene extends Phaser.Scene {
         else if (this.cursors.down.isDown) {
             if (this.player.y < this.physics.world.bounds.height - tileSize) { // No salir del límite inferior
                 this.startMovement(0, tileSize);
+            }
+        }
+        // Obtener la posición actual del personaje en la cuadrícula
+        const playerGridX = Math.floor(this.player.x / this.tileSize);
+        const playerGridY = Math.floor(this.player.y / this.tileSize);
+
+        if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+            console.log("🔹 Barra espaciadora detectada.");
+
+            if (this.menuTiendaContainer.visible) {
+                console.log("🔴 Cerrando menú de la tienda...");
+                this.cerrarMenuTienda();
+            } else if (playerGridX === 8 && playerGridY === 2) {
+                console.log("🟢 Abriendo menú de la tienda...");
+                this.abrirMenuTienda();
             }
         }
 
