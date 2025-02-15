@@ -53,6 +53,8 @@ class GameScene extends Phaser.Scene {
         super('GameScene');
         this.moving = false; // Bandera para controlar si está en movimiento
         this.direction = null; // Dirección actual de movimiento
+        this.currentTween = null;     // Guardará el tween en curso
+        this.isLadderMovement = false; // Indicará si el movimiento actual es con escalera
     }
 
     preload() {
@@ -1035,30 +1037,82 @@ class GameScene extends Phaser.Scene {
             return; // No permitir nuevos movimientos mientras el personaje está en movimiento
         }
 
-        // Movimiento a la izquierda
         if (this.cursors.left.isDown) {
-            if (this.player.x > 0) { // No salir del límite izquierdo
-                this.startMovement(-tileSize, 0);
-            }
-        }
-        // Movimiento a la derecha
-        else if (this.cursors.right.isDown) {
-            if (this.player.x < this.physics.world.bounds.width - tileSize) { // No salir del límite derecho
-                this.startMovement(tileSize, 0);
-            }
-        }
-        // Movimiento hacia arriba
-        else if (this.cursors.up.isDown) {
-            if (this.grid[gridX] && this.grid[gridX][gridY] && this.grid[gridX][gridY].type === 'ladder') {
-                if (this.player.y > 0) { // No salir del límite superior
-                    this.startMovement(0, -tileSize);
+            if (this.player.x > 0) {
+                if (this.spaceKey.isDown) {
+                    // Si ya se está moviendo sin escalera, cancelamos y reiniciamos con escalera
+                    if (this.moving && !this.isLadderMovement && this.currentTween) {
+                        this.currentTween.stop();
+                        this.moving = false;
+                        this.currentTween = null;
+                    }
+                    if (!this.moving) {
+                        this.startMovementWithLadder(-tileSize, 0);
+                    }
+                } else {
+                    if (!this.moving) {
+                        this.startMovement(-tileSize, 0);
+                    }
                 }
             }
-        }
-        // Movimiento hacia abajo
-        else if (this.cursors.down.isDown) {
-            if (this.player.y < this.physics.world.bounds.height - tileSize) { // No salir del límite inferior
-                this.startMovement(0, tileSize);
+        } else if (this.cursors.right.isDown) {
+            if (this.player.x < this.physics.world.bounds.width - tileSize) {
+                if (this.spaceKey.isDown) {
+                    if (this.moving && !this.isLadderMovement && this.currentTween) {
+                        this.currentTween.stop();
+                        this.moving = false;
+                        this.currentTween = null;
+                    }
+                    if (!this.moving) {
+                        this.startMovementWithLadder(tileSize, 0);
+                    }
+                } else {
+                    if (!this.moving) {
+                        this.startMovement(tileSize, 0);
+                    }
+                }
+            }
+        } else if (this.cursors.up.isDown) {
+            if (this.player.y > 0) {
+                if (this.spaceKey.isDown) {
+                    // Si se pulsa espacio + flecha arriba, no permitimos mover hacia arriba si estamos en la superficie (fila 3)
+                    if (gridY === 2) {
+                        console.log("No se permite mover hacia arriba desde la superficie.");
+                    } else {
+                        if (this.moving && !this.isLadderMovement && this.currentTween) {
+                            this.currentTween.stop();
+                            this.moving = false;
+                            this.currentTween = null;
+                        }
+                        if (!this.moving) {
+                            this.startMovementWithLadder(0, -tileSize);
+                        }
+                    }
+                } else {
+                    // Movimiento normal hacia arriba: solo se permite si la celda actual es escalera
+                    if (this.grid[gridX] && this.grid[gridX][gridY] && this.grid[gridX][gridY].type === 'ladder') {
+                        if (!this.moving) {
+                            this.startMovement(0, -tileSize);
+                        }
+                    }
+                }
+            }
+        } else if (this.cursors.down.isDown) {
+            if (this.player.y < this.physics.world.bounds.height - tileSize) {
+                if (this.spaceKey.isDown) {
+                    if (this.moving && !this.isLadderMovement && this.currentTween) {
+                        this.currentTween.stop();
+                        this.moving = false;
+                        this.currentTween = null;
+                    }
+                    if (!this.moving) {
+                        this.startMovementWithLadder(0, tileSize);
+                    }
+                } else {
+                    if (!this.moving) {
+                        this.startMovement(0, tileSize);
+                    }
+                }
             }
         }
 
@@ -1078,132 +1132,147 @@ class GameScene extends Phaser.Scene {
 
     startMovement(dx, dy) {
         if (this.moving) return; // Evitar iniciar si ya está en movimiento
-
-        this.moving = true; // Bloquear nuevos movimientos
+        this.moving = true;
+        this.isLadderMovement = false;
+        const tileSize = this.tileSize;
         const targetX = this.player.x + dx;
         const targetY = this.player.y + dy;
-        const tileSize = this.tileSize;
 
-        this.tweens.add({
+        this.currentTween = this.tweens.add({
             targets: this.player,
             x: targetX,
             y: targetY,
-            duration: 200, // Ajusta la duración según la velocidad deseada
-            ease: 'Quadratic.Out', // O prueba con 'Sine.easeInOut' para mayor suavidad
+            duration: 200,
+            ease: 'Quadratic.Out',
             onComplete: () => {
-                // Aquí se procesa la lógica de recolección, etc.
                 const gridX = Math.floor(targetX / tileSize);
                 const gridY = Math.floor(targetY / tileSize);
-                const block = (this.grid[gridX] && this.grid[gridX][gridY]) ? this.grid[gridX][gridY] : null;
-
-                if (block) {
-                    // Lógica para recolectar minerales y limpiar el bloque
-
-                    // Recolectar carbón
-                    if (block.type === 'carbon') {
-                        this.carbonCount += 1; // Incrementar el contador de carbón
-                        this.carbonText.setText(`Carbón: ${this.carbonCount}`); // Actualizar el menú
-                        block.type = 'empty'; // Cambiar el tipo del bloque a vacío
-
-                        // Destruir la textura de carbón (superposición) si existe
-                        if (block.overlaySprite) {
-                            block.overlaySprite.destroy();
-                            block.overlaySprite = null;
-                        }
-
-                        // Destruir la textura base (piedra) si existe
-                        if (block.baseSprite) {
-                            block.baseSprite.destroy();
-                            block.baseSprite = null;
-                        }
-                    }
-
-                    // Recolectar cobre
-                    if (block.type === 'cobre') {
-                        this.cobreCount += 1; // Incrementar el contador de cobre
-                        this.cobreText.setText(`Cobre: ${this.cobreCount}`); // Actualizar el menú
-                        block.type = 'empty'; // Cambiar el tipo del bloque a vacío
-                        if (block.sprite) block.sprite.destroy(); // Eliminar el sprite del bloque de cobre
-                    }
-
-                    // Recolectar hierro
-                    if (block.type === 'hierro') {
-                        this.hierroCount += 1; // Incrementar el contador de hierro
-                        this.hierroText.setText(`Hierro: ${this.hierroCount}`); // Actualizar el menú
-                        block.type = 'empty'; // Cambiar el tipo del bloque a vacío
-                        if (block.sprite) block.sprite.destroy(); // Eliminar el sprite del bloque de hierro
-                    }
-
-                    // Recolectar plata
-                    if (block.type === 'plata') {
-                        this.plataCount += 1; // Incrementar el contador de plata
-                        this.plataText.setText(`Plata: ${this.plataCount}`); // Actualizar el menú
-                        block.type = 'empty'; // Cambiar el tipo del bloque a vacío
-                        if (block.sprite) {
-                            block.sprite.destroy(); // Eliminar el sprite del bloque de plata
-                        }
-                    }
-
-                    // Recolectar oro
-                    if (block.type === 'oro') {
-                        this.oroCount = (this.oroCount || 0) + 1; // Incrementar el contador de oro
-                        this.oroText.setText(`Oro: ${this.oroCount}`); // Actualizar el menú
-                        block.type = 'empty'; // Cambiar el tipo del bloque a vacío
-                        if (block.sprite) block.sprite.destroy(); // Eliminar el sprite del bloque de oro
-                    }
-
-                    if (block.type === 'rubi') { // Recolectar rubí
-                        this.rubiCount = (this.rubiCount || 0) + 1; // Incrementar el contador de rubí
-                        this.rubiText.setText(`Rubí: ${this.rubiCount}`); // Actualizar el texto en el menú
-                        block.type = 'empty'; // Cambiar el tipo del bloque a vacío
-                        if (block.sprite) block.sprite.destroy(); // Eliminar el sprite del bloque de rubí
-                    }
-
-                    // Recolectar esmeralda
-                    if (block.type === 'esmeralda') {
-                        this.esmeraldaCount += 1; // Incrementar el contador de esmeraldas
-                        this.esmeraldaText.setText(`Esmeraldas: ${this.esmeraldaCount}`); // Actualizar el texto en el menú
-                        block.type = 'empty'; // Vaciar el bloque
-                        if (block.sprite) {
-                            block.sprite.destroy(); // Eliminar el sprite
-                            block.sprite = null; // Asegurarse de que no haya referencia
-                        }
-                    }
-
-                    // Recolectar diamante
-                    if (block.type === 'diamante') {
-                        this.diamanteCount = (this.diamanteCount || 0) + 1; // Incrementar el contador de diamantes
-                        this.diamanteText.setText(`Diamantes: ${this.diamanteCount}`); // Actualizar el texto en el menú
-                        block.type = 'empty'; // Vaciar el bloque
-                        if (block.sprite) {
-                            block.sprite.destroy(); // Eliminar el sprite
-                            block.sprite = null; // Asegurarse de que no haya referencia
-                        }
-                    }
-
-                    // Vaciar bloques de tierra o piedra
-                    if (block.type === 'tierra' || block.type === 'piedra') {
-                        block.type = 'empty';
-                        if (block.sprite) block.sprite.destroy();
-                    }
-                }
-
-                // Liberar el bloqueo de movimiento
+                this.processBlock(gridX, gridY);
                 this.moving = false;
-
-                // Verificamos si se sigue pulsando alguna tecla para encadenar el movimiento
-                if (this.cursors.left.isDown) {
-                    this.startMovement(-tileSize, 0);
-                } else if (this.cursors.right.isDown) {
-                    this.startMovement(tileSize, 0);
-                } else if (this.cursors.up.isDown && block && block.type === 'ladder') {
-                    // Permitir movimiento vertical si el bloque actual es una escalera (o se ha comprobado la condición adecuada)
-                    this.startMovement(0, -tileSize);
-                } else if (this.cursors.down.isDown) {
-                    this.startMovement(0, tileSize);
-                }
+                this.currentTween = null;
+                // Encadenamiento normal (si se sigue pulsando alguna tecla) se procesa en update
             }
         });
+    }
+
+    startMovementWithLadder(dx, dy) {
+        if (this.moving) return;
+        this.moving = true;
+        this.isLadderMovement = true;
+        const tileSize = this.tileSize;
+        const targetX = this.player.x + dx;
+        const targetY = this.player.y + dy;
+
+        this.currentTween = this.tweens.add({
+            targets: this.player,
+            x: targetX,
+            y: targetY,
+            duration: 200,
+            ease: 'Quadratic.Out',
+            onComplete: () => {
+                const gridX = Math.floor(targetX / tileSize);
+                const gridY = Math.floor(targetY / tileSize);
+                // Procesamos el bloque para recolección, etc.
+                this.processBlock(gridX, gridY);
+                // Si la celda destino está vacía Y es válida para escalera (fila >= 3), colocamos la escalera
+                if (gridY >= 3 &&
+                    this.grid[gridX] &&
+                    this.grid[gridX][gridY] &&
+                    this.grid[gridX][gridY].type === 'empty') {
+                    this.grid[gridX][gridY].type = 'ladder';
+                    this.grid[gridX][gridY].sprite = this.add.image(
+                        gridX * tileSize,
+                        gridY * tileSize,
+                        'ladder'
+                    )
+                        .setOrigin(0)
+                        .setDisplaySize(tileSize, tileSize)
+                        .setDepth(1);
+                }
+                this.moving = false;
+                this.currentTween = null;
+            }
+        });
+    }
+
+    processBlock(gridX, gridY) {
+        const block = (this.grid[gridX] && this.grid[gridX][gridY]) ? this.grid[gridX][gridY] : null;
+        if (block) {
+            // Recolectar carbón
+            if (block.type === 'carbon') {
+                this.carbonCount += 1;
+                this.carbonText.setText(`Carbón: ${this.carbonCount}`);
+                block.type = 'empty';
+                if (block.overlaySprite) {
+                    block.overlaySprite.destroy();
+                    block.overlaySprite = null;
+                }
+                if (block.baseSprite) {
+                    block.baseSprite.destroy();
+                    block.baseSprite = null;
+                }
+            }
+            // Recolectar cobre
+            if (block.type === 'cobre') {
+                this.cobreCount += 1;
+                this.cobreText.setText(`Cobre: ${this.cobreCount}`);
+                block.type = 'empty';
+                if (block.sprite) block.sprite.destroy();
+            }
+            // Recolectar hierro
+            if (block.type === 'hierro') {
+                this.hierroCount += 1;
+                this.hierroText.setText(`Hierro: ${this.hierroCount}`);
+                block.type = 'empty';
+                if (block.sprite) block.sprite.destroy();
+            }
+            // Recolectar plata
+            if (block.type === 'plata') {
+                this.plataCount += 1;
+                this.plataText.setText(`Plata: ${this.plataCount}`);
+                block.type = 'empty';
+                if (block.sprite) block.sprite.destroy();
+            }
+            // Recolectar oro
+            if (block.type === 'oro') {
+                this.oroCount = (this.oroCount || 0) + 1;
+                this.oroText.setText(`Oro: ${this.oroCount}`);
+                block.type = 'empty';
+                if (block.sprite) block.sprite.destroy();
+            }
+            // Recolectar rubí
+            if (block.type === 'rubi') {
+                this.rubiCount = (this.rubiCount || 0) + 1;
+                this.rubiText.setText(`Rubí: ${this.rubiCount}`);
+                block.type = 'empty';
+                if (block.sprite) block.sprite.destroy();
+            }
+            // Recolectar esmeralda
+            if (block.type === 'esmeralda') {
+                this.esmeraldaCount += 1;
+                this.esmeraldaText.setText(`Esmeraldas: ${this.esmeraldaCount}`);
+                block.type = 'empty';
+                if (block.sprite) {
+                    block.sprite.destroy();
+                    block.sprite = null;
+                }
+            }
+            // Recolectar diamante
+            if (block.type === 'diamante') {
+                this.diamanteCount = (this.diamanteCount || 0) + 1;
+                this.diamanteText.setText(`Diamantes: ${this.diamanteCount}`);
+                block.type = 'empty';
+                if (block.sprite) {
+                    block.sprite.destroy();
+                    block.sprite = null;
+                }
+            }
+            // Si el bloque es de tierra o piedra, lo dejamos vacío
+            if (block.type === 'tierra' || block.type === 'piedra') {
+                block.type = 'empty';
+                if (block.sprite) block.sprite.destroy();
+            }
+        }
     }
 
     startFall(fallDistance) {
