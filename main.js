@@ -365,7 +365,7 @@ class GameScene extends Phaser.Scene {
         this.player.displayHeight = this.tileSize; // Ajustar alto al tamaño de la cuadrícula
         this.player.setCollideWorldBounds(true);
 
-        this.cameras.main.startFollow(this.player);
+        this.cameras.main.startFollow(this.player, true, 1, 1);
 
         // Barra de vida - fondo gris
         this.healthBarBackground = this.add.graphics()
@@ -960,6 +960,18 @@ class GameScene extends Phaser.Scene {
             return; // Evitar que se ejecute cualquier otro código de movimiento
         }
 
+        // Obtener la posición actual del jugador en la cuadrícula
+        const playerGridX = Math.floor(this.player.x / this.tileSize);
+        const playerGridY = Math.floor(this.player.y / this.tileSize);
+
+        // Si se presiona la barra y el jugador está en la celda (8,2), se abre la tienda
+        if (Phaser.Input.Keyboard.JustDown(this.spaceKey) && playerGridX === 8 && playerGridY === 2) {
+            console.log("🟢 Abriendo menú de la tienda...");
+            this.abrirMenuTienda();
+            return; // Salir del update para evitar que se procese otro movimiento en ese frame
+        }
+
+
         // Si el personaje ya está en movimiento, no hacer nada más
         if (this.moving) return;
 
@@ -1025,34 +1037,7 @@ class GameScene extends Phaser.Scene {
                 this.startMovement(0, tileSize);
             }
         }
-        // Obtener la posición actual del personaje en la cuadrícula
-        const playerGridX = Math.floor(this.player.x / this.tileSize);
-        const playerGridY = Math.floor(this.player.y / this.tileSize);
-
-        if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-            console.log("🔹 Barra espaciadora detectada.");
-
-            if (this.menuTiendaContainer.visible) {
-                console.log("🔴 Cerrando menú de la tienda...");
-                this.cerrarMenuTienda();
-            } else if (playerGridX === 8 && playerGridY === 2) {
-                console.log("🟢 Abriendo menú de la tienda...");
-                this.abrirMenuTienda();
-            }
-        }
-
-        // Lógica para colocar escaleras manteniendo la barra espaciadora
-        if (this.spaceKey.isDown) {
-            if (gridY >= 3 && this.grid[gridX] && this.grid[gridX][gridY] && this.grid[gridX][gridY].type === 'empty') {
-                // Colocar una escalera
-                this.grid[gridX][gridY].type = 'ladder'; // Cambiar el tipo del bloque
-                this.grid[gridX][gridY].sprite = this.add.image(gridX * tileSize, gridY * tileSize, 'ladder')
-                    .setOrigin(0)
-                    .setDisplaySize(tileSize, tileSize)
-                    .setDepth(1); // Establecer una profundidad baja para la escalera
-            }
-        }
-
+        
         // Actualizar las coordenadas del jugador en el cartel
         this.coordinatesText.setText(`X: ${Math.floor(this.player.x / this.tileSize)}, Y: ${Math.floor(this.player.y / this.tileSize)}`);
     }
@@ -1068,26 +1053,27 @@ class GameScene extends Phaser.Scene {
     }
 
     startMovement(dx, dy) {
-        if (this.moving) return; // No permitir nuevos movimientos si ya está en movimiento
+        if (this.moving) return; // Evitar iniciar si ya está en movimiento
 
         this.moving = true; // Bloquear nuevos movimientos
         const targetX = this.player.x + dx;
         const targetY = this.player.y + dy;
+        const tileSize = this.tileSize;
 
-        // Animar el movimiento hacia la celda objetivo
         this.tweens.add({
             targets: this.player,
             x: targetX,
             y: targetY,
-            duration: 200, // Duración del movimiento
-            ease: 'Quadratic.Out', // Efecto de easing para suavizar el movimiento
+            duration: 200, // Ajusta la duración según la velocidad deseada
+            ease: 'Quadratic.Out', // O prueba con 'Sine.easeInOut' para mayor suavidad
             onComplete: () => {
-                const gridX = Math.floor(targetX / this.tileSize);
-                const gridY = Math.floor(targetY / this.tileSize);
+                // Aquí se procesa la lógica de recolección, etc.
+                const gridX = Math.floor(targetX / tileSize);
+                const gridY = Math.floor(targetY / tileSize);
+                const block = (this.grid[gridX] && this.grid[gridX][gridY]) ? this.grid[gridX][gridY] : null;
 
-                // Verificar si la posición es válida y si hay un bloque en esa posición
-                if (this.grid[gridX] && this.grid[gridX][gridY]) {
-                    const block = this.grid[gridX][gridY];
+                if (block) {
+                    // Lógica para recolectar minerales y limpiar el bloque
 
                     // Recolectar carbón
                     if (block.type === 'carbon') {
@@ -1180,6 +1166,18 @@ class GameScene extends Phaser.Scene {
 
                 // Liberar el bloqueo de movimiento
                 this.moving = false;
+
+                // Verificamos si se sigue pulsando alguna tecla para encadenar el movimiento
+                if (this.cursors.left.isDown) {
+                    this.startMovement(-tileSize, 0);
+                } else if (this.cursors.right.isDown) {
+                    this.startMovement(tileSize, 0);
+                } else if (this.cursors.up.isDown && block && block.type === 'ladder') {
+                    // Permitir movimiento vertical si el bloque actual es una escalera (o se ha comprobado la condición adecuada)
+                    this.startMovement(0, -tileSize);
+                } else if (this.cursors.down.isDown) {
+                    this.startMovement(0, tileSize);
+                }
             }
         });
     }
