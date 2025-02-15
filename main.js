@@ -964,12 +964,36 @@ class GameScene extends Phaser.Scene {
         const playerGridX = Math.floor(this.player.x / this.tileSize);
         const playerGridY = Math.floor(this.player.y / this.tileSize);
 
-        // Si se presiona la barra y el jugador está en la celda (8,2), se abre la tienda
-        if (Phaser.Input.Keyboard.JustDown(this.spaceKey) && playerGridX === 8 && playerGridY === 2) {
-            console.log("🟢 Abriendo menú de la tienda...");
-            this.abrirMenuTienda();
-            return; // Salir del update para evitar que se procese otro movimiento en ese frame
+        // Si se pulsa la barra espaciadora (una sola vez)...
+        if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+            // Primero, si el jugador está en la celda de la tienda (8,2), se abre la tienda
+            if (playerGridX === 8 && playerGridY === 2) {
+                console.log("🟢 Abriendo menú de la tienda...");
+                this.abrirMenuTienda();
+                return; // Salir del update para no ejecutar más código en este frame
+            }
+
+            // Agregamos la restricción: si la fila es menor que 3, no se coloca escalera
+            if (playerGridY < 3) {
+                console.log("No se pueden poner escaleras por encima de la fila 3");
+                return;
+            }
+
+            // Si no es la celda de la tienda, y la celda actual está vacía, se coloca una escalera
+            if (this.grid[playerGridX] && this.grid[playerGridX][playerGridY] && this.grid[playerGridX][playerGridY].type === 'empty') {
+                this.grid[playerGridX][playerGridY].type = 'ladder';
+                this.grid[playerGridX][playerGridY].sprite = this.add.image(
+                    playerGridX * this.tileSize,
+                    playerGridY * this.tileSize,
+                    'ladder'
+                )
+                    .setOrigin(0)
+                    .setDisplaySize(this.tileSize, this.tileSize)
+                    .setDepth(1);
+                console.log("Escalera colocada en la celda (" + playerGridX + ", " + playerGridY + ")");
+            }
         }
+
 
 
         // Si el personaje ya está en movimiento, no hacer nada más
@@ -1037,7 +1061,7 @@ class GameScene extends Phaser.Scene {
                 this.startMovement(0, tileSize);
             }
         }
-        
+
         // Actualizar las coordenadas del jugador en el cartel
         this.coordinatesText.setText(`X: ${Math.floor(this.player.x / this.tileSize)}, Y: ${Math.floor(this.player.y / this.tileSize)}`);
     }
