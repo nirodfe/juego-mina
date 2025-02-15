@@ -592,45 +592,48 @@ class GameScene extends Phaser.Scene {
             diamante: this.diamanteText
         };
 
-        // Añadir el botón de la mochila
+        // Crear el botón de la mochila
         const mochilaButton = this.add.image(
-            this.cameras.main.width - buttonSize / 2 - 16, // Posición inicial en X
-            buttonSize / 2 + 16, // Posición inicial en Y
+            this.cameras.main.width - buttonSize / 2 - 16, // Posición en X
+            buttonSize / 2 + 16, // Posición en Y
             'mochila' // Imagen del botón
         )
             .setOrigin(0.5)
-            .setInteractive({ useHandCursor: true }) // Hacer que sea interactivo y cambiar el cursor al pasar
+            .setInteractive({ useHandCursor: true })
             .setDisplaySize(buttonSize, buttonSize)
-            .setScrollFactor(0) // Fijar el botón a la cámara para que no se mueva con el mundo
-            .setDepth(15); // Asegurarse de que el botón esté por encima del menú
+            .setScrollFactor(0)
+            .setDepth(15);
 
+        // Evento de clic en el botón de la mochila
         mochilaButton.on('pointerdown', () => {
-            if (this.menuContainer.visible) {
-                // Cerrar el menú
-                this.menuContainer.setVisible(false);
-                this.physics.world.resume(); // Reanudar el mundo físico
-                this.input.keyboard.enabled = true; // Reactivar entradas del teclado
-                this.cameras.main.startFollow(this.player); // Volver a seguir al jugador
-                this.input.keyboard.resetKeys(); // Reiniciar teclas
-                this.player.setVelocity(0, 0); // Detener cualquier movimiento residual
-                this.moving = false; // Reiniciar el estado de movimiento
-            } else {
-                // Abrir el menú
-                this.player.setVelocity(0, 0); // Detener movimiento físico
-                this.moving = false; // Resetear el estado de movimiento
+            // Si el menú de la tienda está abierto, ignoramos el clic
+            if (this.menuTiendaContainer.visible) {
+                return;
+            }
 
+            // Si el menú de la mochila ya está abierto, cerrarlo
+            if (this.menuContainer.visible) {
+                this.menuContainer.setVisible(false);
+                this.physics.world.resume();
+                this.input.keyboard.enabled = true;
+                this.cameras.main.startFollow(this.player);
+                this.input.keyboard.resetKeys();
+                this.player.setVelocity(0, 0);
+                this.moving = false;
+            } else {
+                // Abrir el menú de la mochila
+                this.player.setVelocity(0, 0);
+                this.moving = false;
                 this.menuContainer.setPosition(
                     this.cameras.main.scrollX + this.cameras.main.width / 2,
                     this.cameras.main.scrollY + this.cameras.main.height / 2
                 );
-
                 menuBackground.setSize(this.cameras.main.width, this.cameras.main.height);
-
-                this.menuContainer.setVisible(true); // Mostrar el menú
-                this.physics.world.pause(); // Pausar el mundo físico
-                this.input.keyboard.enabled = false; // Desactivar entradas del teclado
-                this.cameras.main.stopFollow(); // Detener el seguimiento de la cámara
-                this.input.keyboard.resetKeys(); // Reiniciar teclas
+                this.menuContainer.setVisible(true);
+                this.physics.world.pause();
+                this.input.keyboard.enabled = false;
+                this.cameras.main.stopFollow();
+                this.input.keyboard.resetKeys();
             }
         });
 
