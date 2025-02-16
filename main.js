@@ -88,7 +88,8 @@ class GameScene extends Phaser.Scene {
         this.load.image('icono_rubi', 'assets/icono_rubi.png');
         this.load.image('icono_esmeralda', 'assets/icono_esmeralda.png');
         this.load.image('icono_diamante', 'assets/icono_diamante.png');
-        this.load.image('icono_moneda', 'assets/icono_moneda.png'); // Ruta del icono de monedaf
+        this.load.image('icono_moneda', 'assets/icono_moneda.png'); // Ruta del icono de moneda
+        this.load.image('arsenal', 'assets/arsenal.png');
     }
 
     create() {
@@ -255,7 +256,7 @@ class GameScene extends Phaser.Scene {
 
         const numNubes = 75; // Número de nubes
         const minSpeed = 3; // Velocidad mínima en píxeles/segundo
-        const maxSpeed = 9; // Velocidad máxima en píxeles/segundo
+        const maxSpeed = 7; // Velocidad máxima en píxeles/segundo
 
         for (let i = 0; i < numNubes; i++) {
             const tipoNube = Phaser.Math.RND.pick(['nube1', 'nube2']); // Seleccionar aleatoriamente entre las dos nubes
@@ -414,6 +415,15 @@ class GameScene extends Phaser.Scene {
             this.cameras.main.scrollX + this.cameras.main.width / 2,
             this.cameras.main.scrollY + this.cameras.main.height / 2
         );
+
+        // Colocar la tienda para comprar ("Arsenal Minero") en la celda (15,2)
+        const posicionXArsenal = 15 * this.tileSize;  // Columna 15
+        const posicionYArsenal = 3 * this.tileSize;    // Fila 2
+
+        this.arsenal = this.add.image(posicionXArsenal, posicionYArsenal, 'arsenal')
+            .setOrigin(0, 1) // La base de la imagen se alinea con el borde inferior de la celda
+            .setDepth(4)
+            .setDisplaySize(this.tileSize * 3, this.tileSize * 3); // Ajusta el tamaño según necesites
 
         // Inicializar el contador de monedas
         this.monedaCount = 0;
@@ -955,11 +965,21 @@ class GameScene extends Phaser.Scene {
 
         // Si se pulsa la barra espaciadora (una sola vez)...
         if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-            // Primero, si el jugador está en la celda de la tienda (8,2), se abre la tienda
+            // Primero, si el jugador está en la celda de la tienda (7/8/9,2), se abre la tienda
             if ((playerGridX === 7 || playerGridX === 8 || playerGridX === 9) && playerGridY === 2) {
                 console.log("🟢 Abriendo menú de la tienda...");
                 this.abrirMenuTienda();
                 return; // Salir del update para no ejecutar más código en este frame
+            }
+
+            // --- Código nuevo para abrir la tienda al estar en las columnas 14-16 ---
+            const buyStoreGridXMin = 15;
+            const buyStoreGridXMax = 17;
+
+            if ((playerGridX >= buyStoreGridXMin && playerGridX <= buyStoreGridXMax) && playerGridY === 2) {
+                console.log("🟢 Abriendo menú de la tienda de vender minerales (zona de compra)...");
+                this.abrirMenuTienda();
+                return; // Salir para evitar que se ejecute el resto del update
             }
 
             // Agregamos la restricción: si la fila es menor que 3, no se coloca escalera
