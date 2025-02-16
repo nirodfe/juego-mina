@@ -776,9 +776,9 @@ class GameScene extends Phaser.Scene {
             this.menuBorde.setSize(menuAncho, menuAlto);
         }
 
-        // Agregar el título "Tienda"
+        // Agregar el título "Refinería del minero"
         if (!this.menuTitulo) {
-            this.menuTitulo = this.add.text(0, -menuAlto / 2 + 40, "Tienda", {
+            this.menuTitulo = this.add.text(0, -menuAlto / 2 + 40, "Refinería del minero", {
                 fontSize: "48px",
                 fill: "#000000", // Negro
                 fontStyle: "bold",
@@ -787,19 +787,6 @@ class GameScene extends Phaser.Scene {
                 .setOrigin(0.5)
                 .setDepth(22);
             this.menuTiendaContainer.add(this.menuTitulo);
-        }
-
-        // Agregar el subtítulo "VENDER" debajo de "Tienda"
-        if (!this.menuSubtitulo) {
-            this.menuSubtitulo = this.add.text(0, -menuAlto / 2 + 90, "VENDER", {
-                fontSize: "32px",
-                fill: "#444444", // Gris oscuro
-                fontStyle: "bold",
-                fontFamily: "Arial"
-            })
-                .setOrigin(0.5)
-                .setDepth(22);
-            this.menuTiendaContainer.add(this.menuSubtitulo);
         }
 
         // Centrar el menú respecto a la cámara y el mundo
@@ -969,7 +956,7 @@ class GameScene extends Phaser.Scene {
         // Si se pulsa la barra espaciadora (una sola vez)...
         if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
             // Primero, si el jugador está en la celda de la tienda (8,2), se abre la tienda
-            if (playerGridX === 8 && playerGridY === 2) {
+            if ((playerGridX === 7 || playerGridX === 8 || playerGridX === 9) && playerGridY === 2) {
                 console.log("🟢 Abriendo menú de la tienda...");
                 this.abrirMenuTienda();
                 return; // Salir del update para no ejecutar más código en este frame
