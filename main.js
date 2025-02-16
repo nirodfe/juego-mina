@@ -79,7 +79,7 @@ class GameScene extends Phaser.Scene {
         this.load.audio('sonido4', 'assets/sonido4.mp3');
         this.load.image('ladder', 'assets/escalera.png'); // Ajusta la ruta si es diferente
         this.load.image('corazon', 'assets/corazon.png'); // Carga el icono del corazón
-        this.load.image('tienda', 'assets/shop.png'); // Asegúrate de que el nombre del archivo sea correcto
+        this.load.image('refineria', 'assets/shop.png'); // Asegúrate de que el nombre del archivo sea correcto
         this.load.image('icono_carbon', 'assets/icono_carbon.png');
         this.load.image('icono_cobre', 'assets/icono_cobre.png');
         this.load.image('icono_hierro', 'assets/icono_hierro.png');
@@ -93,6 +93,9 @@ class GameScene extends Phaser.Scene {
     }
 
     create() {
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+
         const tileSize = 128;
         const gridSize = 175;
 
@@ -370,6 +373,9 @@ class GameScene extends Phaser.Scene {
 
         this.cameras.main.startFollow(this.player, true, 1, 1);
 
+        // Variable de salud inicial
+        this.health = 100;
+
         // Barra de vida - fondo gris
         this.healthBarBackground = this.add.graphics()
             .fillStyle(0x444444, 1)
@@ -388,68 +394,6 @@ class GameScene extends Phaser.Scene {
             .setScale(0.05) // 📏 Tamaño más pequeño y proporcional
             .setScrollFactor(0) // 📌 Evita que se mueva con la cámara
             .setDepth(12); // 🔼 Mantenerlo por encima de la barra de vida
-
-        // Variable de salud inicial
-        this.health = 100;
-
-        this.cursors = this.input.keyboard.createCursorKeys();
-        this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-
-        // Crear el contenedor del menú de la tienda
-        this.menuTiendaContainer = this.add.container(0, 0).setVisible(false).setDepth(20);
-
-        // Crear fondo del menú de la tienda
-        const borde = 38; // 1 cm en píxeles
-        const menuAncho = this.cameras.main.width - 2 * borde;
-        const menuAlto = this.cameras.main.height - 2 * borde;
-
-        this.menuFondo = this.add.rectangle(0, 0, menuAncho, menuAlto, 0x000000, 0.8)
-            .setOrigin(0.5)
-            .setDepth(20)
-            .setInteractive();
-
-        this.menuTiendaContainer.add(this.menuFondo);
-
-        // Centrar el menú en la pantalla
-        this.menuTiendaContainer.setPosition(
-            this.cameras.main.scrollX + this.cameras.main.width / 2,
-            this.cameras.main.scrollY + this.cameras.main.height / 2
-        );
-
-        // Colocar la tienda para comprar ("Arsenal Minero") en la celda (15,2)
-        const posicionXArsenal = 15 * this.tileSize;  // Columna 15
-        const posicionYArsenal = 3 * this.tileSize;    // Fila 2
-
-        this.arsenal = this.add.image(posicionXArsenal, posicionYArsenal, 'arsenal')
-            .setOrigin(0, 1) // La base de la imagen se alinea con el borde inferior de la celda
-            .setDepth(4)
-            .setDisplaySize(this.tileSize * 3, this.tileSize * 3); // Ajusta el tamaño según necesites
-
-        // Inicializar el contador de monedas
-        this.monedaCount = 0;
-
-        // Crear el icono de moneda en la esquina superior derecha
-        this.monedaIcono = this.add.image(this.cameras.main.width - 50, 60, "icono_moneda")
-            .setOrigin(1, 0.5)
-            .setDisplaySize(35, 35) // Ajustar tamaño del icono
-            .setScrollFactor(0) // Fijarlo a la pantalla
-            .setDepth(100)
-            .setVisible(false); // Inicialmente oculto
-
-        // Crear el texto de monedas al lado del icono
-        this.monedaTexto = this.add.text(this.cameras.main.width - 100, 62, "0", {
-            fontSize: "32px",
-            fill: "#000000",
-            fontStyle: "bold",
-            fontFamily: "Arial"
-        })
-            .setOrigin(1, 0.5)
-            .setDepth(100)
-            .setScrollFactor(0)
-            .setVisible(false); // Inicialmente oculto
-
-        // Tamaño deseado del botón
-        const buttonSize = 100;
 
         // Crear el menú de la mochila (oculto al principio)
         this.menuContainer = this.add.container(0, 0).setVisible(false).setDepth(15); // Establecer profundidad alta para el menú
@@ -604,6 +548,9 @@ class GameScene extends Phaser.Scene {
             diamante: this.diamanteText
         };
 
+        // Tamaño deseado del botón
+        const buttonSize = 100;
+
         // Crear el botón de la mochila
         const mochilaButton = this.add.image(
             this.cameras.main.width - buttonSize / 2 - 16, // Posición en X
@@ -618,8 +565,8 @@ class GameScene extends Phaser.Scene {
 
         // Evento de clic en el botón de la mochila
         mochilaButton.on('pointerdown', () => {
-            // Si el menú de la tienda está abierto, ignoramos el clic
-            if (this.menuTiendaContainer.visible) {
+            // Si el menú de la refineria está abierto, ignoramos el clic
+            if (this.menuRefineriaContainer.visible) {
                 return;
             }
 
@@ -675,13 +622,52 @@ class GameScene extends Phaser.Scene {
             }
         ).setOrigin(0.5, 0).setScrollFactor(0).setDepth(100);
 
-        const posicionXTienda = 7 * this.tileSize; // Convertir coordenada de la cuadrícula a píxeles
-        const posicionYTienda = 3 * this.tileSize; // La tienda debe estar en la superficie
+        // Colocar la "Refineria" en la celda (15,2)
+        const posicionXRefineria = 7 * this.tileSize; // Convertir coordenada de la cuadrícula a píxeles
+        const posicionYRefineria = 3 * this.tileSize; // La refineria debe estar en la superficie
 
-        this.tienda = this.add.image(posicionXTienda, posicionYTienda, 'tienda')
-            .setOrigin(0, 1) // La base de la tienda toca el suelo
+        this.refineria = this.add.image(posicionXRefineria, posicionYRefineria, 'refineria')
+            .setOrigin(0, 1) // La base de la refineria toca el suelo
             .setDepth(4) // Asegurar que esté por encima de otros objetos
             .setDisplaySize(this.tileSize * 3, this.tileSize * 3); // Ajustar tamaño si es necesario
+
+        // Colocar el "Arsenal Minero" en la celda (15,2)
+        const posicionXArsenal = 15 * this.tileSize;  // Columna 15
+        const posicionYArsenal = 3 * this.tileSize;    // Fila 2
+
+        this.arsenal = this.add.image(posicionXArsenal, posicionYArsenal, 'arsenal')
+            .setOrigin(0, 1) // La base de la imagen se alinea con el borde inferior de la celda
+            .setDepth(4)
+            .setDisplaySize(this.tileSize * 3, this.tileSize * 3); // Ajusta el tamaño según necesites
+
+        // Crear el contenedor del menú de la refineria
+        this.menuRefineriaContainer = this.add.container(0, 0).setVisible(false).setDepth(20);
+
+        // Crear el contenedor del menú del arsenal
+        this.menuArsenalContainer = this.add.container(0, 0).setVisible(false).setDepth(20);
+
+        // Inicializar el contador de monedas
+        this.monedaCount = 0;
+
+        // Crear el icono de moneda en la esquina superior derecha
+        this.monedaIcono = this.add.image(this.cameras.main.width - 50, 60, "icono_moneda")
+            .setOrigin(1, 0.5)
+            .setDisplaySize(35, 35) // Ajustar tamaño del icono
+            .setScrollFactor(0) // Fijarlo a la pantalla
+            .setDepth(100)
+            .setVisible(false); // Inicialmente oculto
+
+        // Crear el texto de monedas al lado del icono
+        this.monedaTexto = this.add.text(this.cameras.main.width - 100, 62, "0", {
+            fontSize: "32px",
+            fill: "#000000",
+            fontStyle: "bold",
+            fontFamily: "Arial"
+        })
+            .setOrigin(1, 0.5)
+            .setDepth(100)
+            .setScrollFactor(0)
+            .setVisible(false); // Inicialmente oculto
     }
 
     updateHealthBar() {
@@ -763,12 +749,12 @@ class GameScene extends Phaser.Scene {
         this.moving = false; // Permitir movimiento de nuevo
     }
 
-    abrirMenuTienda() {
-        if (this.menuTiendaContainer.visible) return; // Si ya está abierto, no hacer nada
+    abrirMenuRefineria() {
+        if (this.menuRefineriaContainer.visible) return; // Si ya está abierto, no hacer nada
 
-        console.log("🟢 Abriendo menú de la tienda...");
+        console.log("🟢 Abriendo menú de la refineria...");
 
-        // Mostrar el contador de monedas al abrir la tienda
+        // Mostrar el contador de monedas al abrir la refineria
         this.monedaIcono.setVisible(true);
         this.monedaTexto.setVisible(true);
 
@@ -781,7 +767,7 @@ class GameScene extends Phaser.Scene {
             this.menuBorde = this.add.rectangle(0, 0, menuAncho, menuAlto, 0xFFF0C9, 1) // Marrón oscuro
                 .setOrigin(0.5)
                 .setDepth(20);
-            this.menuTiendaContainer.add(this.menuBorde);
+            this.menuRefineriaContainer.add(this.menuBorde);
         } else {
             this.menuBorde.setSize(menuAncho, menuAlto);
         }
@@ -796,16 +782,16 @@ class GameScene extends Phaser.Scene {
             })
                 .setOrigin(0.5)
                 .setDepth(22);
-            this.menuTiendaContainer.add(this.menuTitulo);
+            this.menuRefineriaContainer.add(this.menuTitulo);
         }
 
         // Centrar el menú respecto a la cámara y el mundo
-        this.menuTiendaContainer.setPosition(
+        this.menuRefineriaContainer.setPosition(
             this.cameras.main.scrollX + this.cameras.main.width / 2,
             this.cameras.main.scrollY + this.cameras.main.height / 2
         );
 
-        // Detener el personaje completamente al abrir la tienda
+        // Detener el personaje completamente al abrir la refineria
         this.player.setVelocity(0, 0); // Para por completo cualquier movimiento
         this.moving = false; // Reiniciar el estado de movimiento
 
@@ -830,7 +816,7 @@ class GameScene extends Phaser.Scene {
         // Crear contenedor para los botones
         if (!this.menuVenta) {
             this.menuVenta = this.add.container(0, 0).setDepth(22).setVisible(true);
-            this.menuTiendaContainer.add(this.menuVenta);
+            this.menuRefineriaContainer.add(this.menuVenta);
 
             const columnas = 4;  // 4 columnas
             const filas = 2;     // 2 filas
@@ -876,22 +862,22 @@ class GameScene extends Phaser.Scene {
             }
         }
 
-        this.menuTiendaContainer.setVisible(true);
+        this.menuRefineriaContainer.setVisible(true);
         this.physics.world.pause(); // Pausar el mundo físico
         this.cameras.main.stopFollow(); // Detener el seguimiento de la cámara
     }
 
     // 🔴 Al cerrar el menú, permitir nuevamente el movimiento
-    cerrarMenuTienda() {
-        if (!this.menuTiendaContainer.visible) return; // Si ya está cerrado, no hacer nada
+    cerrarMenuRefineria() {
+        if (!this.menuRefineriaContainer.visible) return; // Si ya está cerrado, no hacer nada
 
-        console.log("🔴 Cerrando menú de la tienda...");
+        console.log("🔴 Cerrando menú de la refineria...");
 
-        // Ocultar el contador de monedas al cerrar la tienda
+        // Ocultar el contador de monedas al cerrar la refineria
         this.monedaIcono.setVisible(false);
         this.monedaTexto.setVisible(false);
 
-        this.menuTiendaContainer.setVisible(false); // Ocultar el menú de la tienda
+        this.menuRefineriaContainer.setVisible(false); // Ocultar el menú de la refineria
         this.physics.world.resume(); // Reanudar el mundo físico
         this.cameras.main.startFollow(this.player); // Volver a seguir al jugador
 
@@ -904,6 +890,87 @@ class GameScene extends Phaser.Scene {
         this.cursors.right.enabled = true;
         this.cursors.up.enabled = true;
         this.cursors.down.enabled = true;
+    }
+
+    cerrarMenuArsenal() {
+        if (!this.menuArsenalContainer.visible) return; // Si ya está cerrado, no hacer nada
+
+        console.log("🔴 Cerrando menú del arsenal...");
+
+        // Ocultar el contador de monedas al cerrar la refineria
+        this.monedaIcono.setVisible(false);
+        this.monedaTexto.setVisible(false);
+
+        this.menuArsenalContainer.setVisible(false); // Ocultar el menú de la refineria
+        this.physics.world.resume(); // Reanudar el mundo físico
+        this.cameras.main.startFollow(this.player); // Volver a seguir al jugador
+
+        // Asegurar que el personaje no tenga movimiento residual
+        this.player.setVelocity(0, 0);
+        this.moving = false;
+
+        // Reactivar movimiento del personaje
+        this.cursors.left.enabled = true;
+        this.cursors.right.enabled = true;
+        this.cursors.up.enabled = true;
+        this.cursors.down.enabled = true;
+    }
+
+    abrirMenuArsenal() {
+        if (this.menuArsenalContainer.visible) return; // Si ya está abierto, no hacer nada
+
+        console.log("🟢 Abriendo menú de Arsenal Minero...");
+
+        // Mostrar el contador de monedas al abrir el menú
+        this.monedaIcono.setVisible(true);
+        this.monedaTexto.setVisible(true);
+
+        const borde = 38; // 1 cm en píxeles
+        const menuAncho = this.cameras.main.width - 2 * borde;
+        const menuAlto = this.cameras.main.height - 2 * borde;
+
+        // Crear el borde (marrón) para el menú de Arsenal
+        if (!this.menuArsenalBorde) {
+            this.menuArsenalBorde = this.add.rectangle(0, 0, menuAncho, menuAlto, 0xFFF0C9, 1) // Marrón oscuro
+                .setOrigin(0.5)
+                .setDepth(20);
+            this.menuArsenalContainer.add(this.menuArsenalBorde);
+        } else {
+            this.menuArsenalBorde.setSize(menuAncho, menuAlto);
+        }
+
+        // Agregar el título "Arsenal Minero"
+        if (!this.menuTituloArsenal) {
+            this.menuTituloArsenal = this.add.text(0, -menuAlto / 2 + 40, "Arsenal Minero", {
+                fontSize: "48px",
+                fill: "#000000", // Negro
+                fontStyle: "bold",
+                fontFamily: "Arial"
+            })
+                .setOrigin(0.5)
+                .setDepth(22);
+            this.menuArsenalContainer.add(this.menuTituloArsenal);
+        }
+
+        // Centrar el menú respecto a la cámara y el mundo
+        this.menuArsenalContainer.setPosition(
+            this.cameras.main.scrollX + this.cameras.main.width / 2,
+            this.cameras.main.scrollY + this.cameras.main.height / 2
+        );
+
+        // Detener el personaje completamente al abrir el menú
+        this.player.setVelocity(0, 0); // Para detener cualquier movimiento
+        this.moving = false; // Reiniciar el estado de movimiento
+
+        // Desactivar las teclas de movimiento, pero mantener la barra espaciadora
+        this.cursors.left.enabled = false;
+        this.cursors.right.enabled = false;
+        this.cursors.up.enabled = false;
+        this.cursors.down.enabled = false;
+
+        this.menuArsenalContainer.setVisible(true);
+        this.physics.world.pause(); // Pausar el mundo físico
+        this.cameras.main.stopFollow(); // Detener el seguimiento de la cámara
     }
 
     // Función para vender un mineral
@@ -946,14 +1013,27 @@ class GameScene extends Phaser.Scene {
     }
 
     update() {
-        // Si el menú de la tienda está abierto, detener el personaje pero permitir cerrar el menú
-        if (this.menuTiendaContainer.visible) {
+        // Si el menú de la refineria está abierto, detener el personaje pero permitir cerrar el menú
+        if (this.menuRefineriaContainer.visible) {
             this.player.setVelocity(0, 0);
             this.moving = false;
 
-            // Permitir cerrar la tienda con la barra espaciadora
+            // Permitir cerrar la refineria con la barra espaciadora
             if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-                this.cerrarMenuTienda();
+                this.cerrarMenuRefineria();
+            }
+
+            return; // Evitar que se ejecute cualquier otro código de movimiento
+        }
+
+        // Si el menú del arsenal está abierto, detener el personaje pero permitir cerrar el menú
+        if (this.menuArsenalContainer.visible) {
+            this.player.setVelocity(0, 0);
+            this.moving = false;
+
+            // Permitir cerrar la refineria con la barra espaciadora
+            if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+                this.cerrarMenuArsenal();
             }
 
             return; // Evitar que se ejecute cualquier otro código de movimiento
@@ -965,20 +1045,20 @@ class GameScene extends Phaser.Scene {
 
         // Si se pulsa la barra espaciadora (una sola vez)...
         if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-            // Primero, si el jugador está en la celda de la tienda (7/8/9,2), se abre la tienda
+            // Primero, si el jugador está en la celda de la refineria (7/8/9,2), se abre la refineria
             if ((playerGridX === 7 || playerGridX === 8 || playerGridX === 9) && playerGridY === 2) {
-                console.log("🟢 Abriendo menú de la tienda...");
-                this.abrirMenuTienda();
+                console.log("🟢 Abriendo menú de la refineria...");
+                this.abrirMenuRefineria();
                 return; // Salir del update para no ejecutar más código en este frame
             }
 
-            // --- Código nuevo para abrir la tienda al estar en las columnas 14-16 ---
+            // abrir el arsenal al estar en las columnas 14-16 ---
             const buyStoreGridXMin = 15;
             const buyStoreGridXMax = 17;
 
             if ((playerGridX >= buyStoreGridXMin && playerGridX <= buyStoreGridXMax) && playerGridY === 2) {
-                console.log("🟢 Abriendo menú de la tienda de vender minerales (zona de compra)...");
-                this.abrirMenuTienda();
+                console.log("🟢 Abriendo menú del arsenal");
+                this.abrirMenuArsenal();
                 return; // Salir para evitar que se ejecute el resto del update
             }
 
@@ -988,7 +1068,7 @@ class GameScene extends Phaser.Scene {
                 return;
             }
 
-            // Si no es la celda de la tienda, y la celda actual está vacía, se coloca una escalera
+            // Si no es la celda de la refineria, y la celda actual está vacía, se coloca una escalera
             if (this.grid[playerGridX] && this.grid[playerGridX][playerGridY] && this.grid[playerGridX][playerGridY].type === 'empty') {
                 this.grid[playerGridX][playerGridY].type = 'ladder';
                 this.grid[playerGridX][playerGridY].sprite = this.add.image(
