@@ -99,9 +99,6 @@ class GameScene extends Phaser.Scene {
         const tileSize = 128;
         const gridSize = 175;
 
-        // Configurar la tecla de espacio
-        this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-
         this.sounds = [
             this.sound.add('sonido1'),
             this.sound.add('sonido2'),
@@ -565,8 +562,8 @@ class GameScene extends Phaser.Scene {
 
         // Evento de clic en el botón de la mochila
         mochilaButton.on('pointerdown', () => {
-            // Si el menú de la refineria está abierto, ignoramos el clic
-            if (this.menuRefineriaContainer.visible) {
+            // Si el menú de la refineria o arsenal está abierto, ignoramos el clic
+            if (this.menuRefineriaContainer.visible || this.menuArsenalContainer.visible) {
                 return;
             }
 
@@ -967,6 +964,63 @@ class GameScene extends Phaser.Scene {
         this.cursors.right.enabled = false;
         this.cursors.up.enabled = false;
         this.cursors.down.enabled = false;
+
+        // Definir las herramientas con sus imágenes y valores
+        const herramientas = [
+            { nombre: "escalera", imagen: "ladder", valor: 1 },
+            { nombre: "pico_madera", imagen: "refineria", valor: 2 },
+            { nombre: "pico_piedra", imagen: "refineria", valor: 5 },
+            { nombre: "pico_hierro", imagen: "refineria", valor: 10 },
+            { nombre: "pico_oro", imagen: "refineria", valor: 25 }
+        ];
+
+        // Crear contenedor para los botones
+        if (!this.menuCompra) {
+            this.menuCompra = this.add.container(0, 0).setDepth(22).setVisible(true);
+            this.menuArsenalContainer.add(this.menuCompra);
+
+            const columnas = 5;  // 5 columnas
+            const filas = 1;     // 2 filas
+            const espacioX = menuAncho / columnas; // Espacio horizontal
+            const espacioY = menuAlto / filas;   // Espacio vertical
+
+            for (let i = 0; i < herramientas.length; i++) {
+                const columna = i % columnas;
+                const fila = Math.floor(i / columnas);
+
+                const xPos = -menuAncho / 2 + espacioX * columna + espacioX / 2;
+                const yPos = -menuAlto / 2.2 + espacioY * fila + espacioY / 2;
+
+                // Crear botón con el icono del mineral
+                const boton = this.add.image(xPos, yPos, herramientas[i].imagen)
+                    .setOrigin(0.5)
+                    .setDisplaySize(espacioX * 0.55, espacioY/2 * 0.55) // Ajusta al tamaño de la cuadrícula
+                    .setInteractive({ useHandCursor: true });
+
+                // Evento de clic para vender el mineral
+                boton.on('pointerdown', () => {
+                    console.log(`🟢 Comprando ${herramientas[i].nombre}`);
+                });
+
+                // Texto con el valor de la moneda (sin "Valor:")
+                const textoNumero = this.add.text(xPos - 2, yPos + 92 + 25, `${herramientas[i].valor}`, {
+                    fontSize: "24px",
+                    fill: "#000000",
+                    fontStyle: "bold",
+                    fontFamily: "Arial"
+                }).setOrigin(1, 0.5).setDepth(23);
+
+                // Icono de moneda después del número
+                const monedaIcono = this.add.image(xPos + 2, yPos + 90 + 25, "icono_moneda") // Usar la moneda que generamos antes
+                    .setOrigin(0, 0.5)
+                    .setDisplaySize(35, 35) // Ajustar tamaño del icono de moneda
+                    .setDepth(23);
+
+                this.menuCompra.add(boton);
+                this.menuCompra.add(textoNumero);
+                this.menuCompra.add(monedaIcono);
+            }
+        }
 
         this.menuArsenalContainer.setVisible(true);
         this.physics.world.pause(); // Pausar el mundo físico
