@@ -396,6 +396,40 @@ class GameScene extends Phaser.Scene {
             .setScrollFactor(0) // 📌 Evita que se mueva con la cámara
             .setDepth(12); // 🔼 Mantenerlo por encima de la barra de vida
 
+        this.cantidadEscaleras = 50; // El jugador comienza con 50 escaleras
+
+        // Crear icono de escalera debajo del icono de vida (healthIcon)
+        this.iconoEscaleraHUD = this.add.image(this.healthIcon.x, this.healthIcon.y + 50, "ladder")
+            .setOrigin(0.5)
+            .setDisplaySize(64, 64) // Ajusta el tamaño del icono
+            .setScrollFactor(0) // Fijarlo a la UI
+            .setDepth(12); // Mantenerlo visible sobre otros elementos
+
+        // Crear el contador de escaleras debajo del icono
+        this.contadorEscaleras = this.add.text(this.iconoEscaleraHUD.x + 25, this.iconoEscaleraHUD.y + 35, this.cantidadEscaleras, {
+            fontSize: "24px",
+            fill: "#f5deb3",
+            fontStyle: "bold",
+            fontFamily: "Arial"
+        })
+            .setOrigin(0.5)
+            .setScrollFactor(0)
+            .setDepth(12);
+
+        // Inicializar monedas
+        this.monedas = 0;
+
+        this.monedaTexto = this.add.text(this.cameras.main.width - 100, 62, this.monedas.toString(), {
+            fontSize: "32px",
+            fill: "#000000",
+            fontStyle: "bold",
+            fontFamily: "Arial"
+        })
+            .setOrigin(1, 0.5)
+            .setDepth(100)
+            .setScrollFactor(0)
+            .setVisible(false); // Ocultarlo hasta que se necesite
+
         // Crear el menú de la mochila (oculto al principio)
         this.menuContainer = this.add.container(0, 0).setVisible(false).setDepth(15); // Establecer profundidad alta para el menú
 
@@ -978,13 +1012,13 @@ class GameScene extends Phaser.Scene {
             { nombre: "pico_oro", imagen: "pico_oro", valor: 50 }
         ];
 
-        // Crear contenedor para los botones
+        // Crear contenedor para los botones de compra
         if (!this.menuCompra) {
             this.menuCompra = this.add.container(0, 0).setDepth(22).setVisible(true);
             this.menuArsenalContainer.add(this.menuCompra);
 
             const columnas = 5;  // 5 columnas
-            const filas = 1;     // 2 filas
+            const filas = 1;     // 1 fila
             const espacioX = menuAncho / columnas; // Espacio horizontal
             const espacioY = menuAlto / filas;   // Espacio vertical
 
@@ -995,18 +1029,16 @@ class GameScene extends Phaser.Scene {
                 const xPos = -menuAncho / 2 + espacioX * columna + espacioX / 2;
                 const yPos = -menuAlto / 2.2 + espacioY * fila + espacioY / 2;
 
-                // Crear botón con el icono del mineral
+                // Crear botón con el icono del ítem
                 const boton = this.add.image(xPos, yPos, herramientas[i].imagen)
                     .setOrigin(0.5)
-                    .setDisplaySize(espacioX * 0.55, espacioY/2 * 0.55) // Ajusta al tamaño de la cuadrícula
-                    .setInteractive({ useHandCursor: true });
+                    .setDisplaySize(espacioX * 0.55, espacioY / 2 * 0.55) // Ajusta al tamaño de la cuadrícula
+                    .setInteractive({ useHandCursor: true })
+                    .on('pointerdown', () => {
+                        this.comprarItem(herramientas[i].nombre, herramientas[i].valor);
+                    });
 
-                // Evento de clic para vender el mineral
-                boton.on('pointerdown', () => {
-                    console.log(`🟢 Comprando ${herramientas[i].nombre}`);
-                });
-
-                // Texto con el valor de la moneda (sin "Valor:")
+                // Texto con el precio del ítem
                 const textoNumero = this.add.text(xPos - 2, yPos + 92 + 25, `${herramientas[i].valor}`, {
                     fontSize: "24px",
                     fill: "#000000",
@@ -1015,7 +1047,7 @@ class GameScene extends Phaser.Scene {
                 }).setOrigin(1, 0.5).setDepth(23);
 
                 // Icono de moneda después del número
-                const monedaIcono = this.add.image(xPos + 2, yPos + 90 + 25, "icono_moneda") // Usar la moneda que generamos antes
+                const monedaIcono = this.add.image(xPos + 2, yPos + 90 + 25, "icono_moneda")
                     .setOrigin(0, 0.5)
                     .setDisplaySize(35, 35) // Ajustar tamaño del icono de moneda
                     .setDepth(23);
@@ -1068,6 +1100,39 @@ class GameScene extends Phaser.Scene {
             diamante: 75
         };
         return valores[tipo] || 0; // Retorna 0 si el mineral no está en la lista
+    }
+
+    comprarItem(nombre, valor) {
+        if (this.monedas >= valor) {
+            this.monedas -= valor; // Restar monedas
+
+            // Si es una escalera, aumentar el contador de escaleras
+            if (nombre === "escalera") {
+                this.cantidadEscaleras++;
+                this.contadorEscaleras.setText(this.cantidadEscaleras); // Actualizar UI escaleras
+            }
+
+            // Aquí podrías manejar la compra de picos en el futuro
+            console.log(`🟢 Compraste ${nombre}. Te quedan ${this.monedas} monedas.`);
+
+            // Actualizar la UI del contador de monedas
+            if (this.monedaTexto) {
+                this.monedaTexto.setText(this.monedas.toString());
+            }
+        } else {
+            console.log(`❌ No tienes suficientes monedas para comprar ${nombre}.`);
+        }
+    }
+
+    actualizarContadorEscaleras() {
+        if (this.cantidadEscaleras > 0) {
+            this.cantidadEscaleras--; // Restar una escalera
+            this.contadorEscaleras.setText(this.cantidadEscaleras); // Actualizar la UI
+            return true; // Indica que se pudo colocar la escalera
+        } else {
+            console.log("⚠ No tienes más escaleras disponibles.");
+            return false; // Indica que no se puede colocar
+        }
     }
 
     update() {
@@ -1128,20 +1193,22 @@ class GameScene extends Phaser.Scene {
 
             // Si no es la celda de la refineria, y la celda actual está vacía, se coloca una escalera
             if (this.grid[playerGridX] && this.grid[playerGridX][playerGridY] && this.grid[playerGridX][playerGridY].type === 'empty') {
-                this.grid[playerGridX][playerGridY].type = 'ladder';
-                this.grid[playerGridX][playerGridY].sprite = this.add.image(
-                    playerGridX * this.tileSize,
-                    playerGridY * this.tileSize,
-                    'ladder'
-                )
-                    .setOrigin(0)
-                    .setDisplaySize(this.tileSize, this.tileSize)
-                    .setDepth(1);
-                console.log("Escalera colocada en la celda (" + playerGridX + ", " + playerGridY + ")");
+                {
+                    // Verificar si quedan escaleras antes de colocarla
+                    if (this.actualizarContadorEscaleras()) {
+                        this.grid[playerGridX][playerGridY].type = 'ladder';
+                        this.grid[playerGridX][playerGridY].sprite = this.add.image(
+                            playerGridX * this.tileSize,
+                            playerGridY * this.tileSize,
+                            'ladder'
+                        )
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize)
+                            .setDepth(1);
+                    }
+                }
             }
         }
-
-
 
         // Si el personaje ya está en movimiento, no hacer nada más
         if (this.moving) return;
@@ -1324,15 +1391,19 @@ class GameScene extends Phaser.Scene {
                     this.grid[gridX] &&
                     this.grid[gridX][gridY] &&
                     this.grid[gridX][gridY].type === 'empty') {
-                    this.grid[gridX][gridY].type = 'ladder';
-                    this.grid[gridX][gridY].sprite = this.add.image(
-                        gridX * tileSize,
-                        gridY * tileSize,
-                        'ladder'
-                    )
-                        .setOrigin(0)
-                        .setDisplaySize(tileSize, tileSize)
-                        .setDepth(1);
+
+                    // Verificar si quedan escaleras antes de colocarla
+                    if (this.actualizarContadorEscaleras()) {
+                        this.grid[gridX][gridY].type = 'ladder';
+                        this.grid[gridX][gridY].sprite = this.add.image(
+                            gridX * this.tileSize,
+                            gridY * this.tileSize,
+                            'ladder'
+                        )
+                            .setOrigin(0)
+                            .setDisplaySize(tileSize, tileSize)
+                            .setDepth(1);
+                    }
                 }
                 this.moving = false;
                 this.currentTween = null;
