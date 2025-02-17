@@ -90,6 +90,10 @@ class GameScene extends Phaser.Scene {
         this.load.image('icono_diamante', 'assets/icono_diamante.png');
         this.load.image('icono_moneda', 'assets/icono_moneda.png'); // Ruta del icono de moneda
         this.load.image('arsenal', 'assets/arsenal.png');
+        this.load.image('pico_madera', 'assets/pico_madera.png');
+        this.load.image('pico_piedra', 'assets/pico_piedra.png');
+        this.load.image('pico_hierro', 'assets/pico_hierro.png');
+        this.load.image('pico_oro', 'assets/pico_oro.png');
     }
 
     create() {
@@ -967,11 +971,11 @@ class GameScene extends Phaser.Scene {
 
         // Definir las herramientas con sus imágenes y valores
         const herramientas = [
-            { nombre: "escalera", imagen: "ladder", valor: 1 },
-            { nombre: "pico_madera", imagen: "refineria", valor: 2 },
-            { nombre: "pico_piedra", imagen: "refineria", valor: 5 },
-            { nombre: "pico_hierro", imagen: "refineria", valor: 10 },
-            { nombre: "pico_oro", imagen: "refineria", valor: 25 }
+            { nombre: "escalera", imagen: "ladder", valor: 2 },
+            { nombre: "pico_madera", imagen: "pico_madera", valor: 5 },
+            { nombre: "pico_piedra", imagen: "pico_piedra", valor: 10 },
+            { nombre: "pico_hierro", imagen: "pico_hierro", valor: 25 },
+            { nombre: "pico_oro", imagen: "pico_oro", valor: 50 }
         ];
 
         // Crear contenedor para los botones
