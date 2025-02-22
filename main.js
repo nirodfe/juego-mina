@@ -408,7 +408,7 @@ class GameScene extends Phaser.Scene {
             .setScrollFactor(0) // 📌 Evita que se mueva con la cámara
             .setDepth(12); // 🔼 Mantenerlo por encima de la barra de vida
 
-        this.cantidadEscaleras = 50; // El jugador comienza con 50 escaleras
+        this.cantidadEscaleras = 100; // El jugador comienza con 50 escaleras
 
         // Crear icono de escalera debajo del icono de vida (healthIcon)
         this.iconoEscaleraHUD = this.add.image(this.healthIcon.x, this.healthIcon.y + 50, "ladder")
@@ -420,11 +420,21 @@ class GameScene extends Phaser.Scene {
         // Crear el contador de escaleras debajo del icono
         this.contadorEscaleras = this.add.text(this.iconoEscaleraHUD.x + 25, this.iconoEscaleraHUD.y + 35, this.cantidadEscaleras, {
             fontSize: "24px",
-            fill: "#f5deb3",
+            fill: "#FFFF00",
             fontStyle: "bold",
             fontFamily: "Arial"
         })
             .setOrigin(0.5)
+            .setScrollFactor(0)
+            .setDepth(12);
+
+        // Inicializar el pico del jugador como "pico_madera"
+        this.picoActual = "pico_madera";
+
+        // Crear el icono del pico en la UI
+        this.iconoPico = this.add.image(this.healthIcon.x + 100, this.healthIcon.y + 50, this.picoActual)
+            .setOrigin(0.5)
+            .setDisplaySize(64, 64)
             .setScrollFactor(0)
             .setDepth(12);
 
@@ -1141,16 +1151,17 @@ class GameScene extends Phaser.Scene {
         if (this.monedas >= valor) {
             this.monedas -= valor; // Restar monedas
 
-            // Si es una escalera, aumentar el contador de escaleras
             if (nombre === "escalera") {
                 this.cantidadEscaleras++;
-                this.contadorEscaleras.setText(this.cantidadEscaleras); // Actualizar UI escaleras
+                this.contadorEscaleras.setText(this.cantidadEscaleras);
+            } else if (nombre.includes("pico")) {
+                // Si se compra un pico, actualizar el icono en la UI
+                this.picoActual = nombre;
+                this.iconoPico.setTexture(this.picoActual);
             }
 
-            // Aquí podrías manejar la compra de picos en el futuro
             console.log(`🟢 Compraste ${nombre}. Te quedan ${this.monedas} monedas.`);
 
-            // Actualizar la UI del contador de monedas
             if (this.monedaTexto) {
                 this.monedaTexto.setText(this.monedas.toString());
             }
