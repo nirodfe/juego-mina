@@ -446,6 +446,14 @@ class GameScene extends Phaser.Scene {
             pico_oro: 500
         };
 
+        // Definir qué materiales puede minar cada pico
+        this.materialesPermitidos = {
+            pico_madera: ['tierra', 'piedra', 'carbon'],
+            pico_piedra: ['tierra', 'piedra', 'carbon', 'cobre', 'hierro'],
+            pico_hierro: ['tierra', 'piedra', 'carbon', 'cobre', 'hierro', 'plata', 'oro'],
+            pico_oro: ['tierra', 'piedra', 'carbon', 'cobre', 'hierro', 'plata', 'oro', 'rubi', 'esmeralda', 'diamante']
+        };
+
         // Inicializar el pico del jugador con madera
         this.picoActual = "pico_madera";
         this.durabilidadPico = this.durabilidadesPicos[this.picoActual]; // Durabilidad inicial
@@ -1450,18 +1458,13 @@ class GameScene extends Phaser.Scene {
             return;
         }
 
-        // 🚨 Verificar si el pico está roto y el jugador intenta moverse a un bloque sin minar
-        if (this.durabilidadPico <= 0 && targetBlock !== 'empty' && targetBlock !== 'ladder') {
-            console.log("❌ Tu pico está roto, no puedes moverte sobre bloques sin minar.");
-            this.moving = false;
-            return;
-        }
-
-        // 🚨 Bloquear la subida si el pico está roto y no hay escalera o espacio vacío
-        if (dy === -1 && this.durabilidadPico <= 0 && targetBlock !== 'ladder') {
-            console.log("❌ Tu pico está roto, no puedes subir por bloques sin minar.");
-            this.moving = false;
-            return;
+        // 🚨 Si el bloque de destino NO es vacío ni escalera, verificar si el pico puede minarlo
+        if (targetBlock !== 'empty' && targetBlock !== 'ladder') {
+            if (!this.materialesPermitidos[this.picoActual].includes(targetBlock)) {
+                console.log(`❌ No puedes moverte sobre ${targetBlock} con tu ${this.picoActual}.`);
+                this.moving = false;
+                return;
+            }
         }
 
         this.currentTween = this.tweens.add({
@@ -1477,7 +1480,7 @@ class GameScene extends Phaser.Scene {
             }
         });
     }
-
+    
     startMovementWithLadder(dx, dy) {
         if (this.moving) return;
         this.moving = true;
@@ -1498,18 +1501,20 @@ class GameScene extends Phaser.Scene {
 
         const targetBlock = this.grid[gridX][gridY].type;
 
-        // 🚨 Verificar si el pico está roto y el jugador intenta moverse a un bloque sin minar
-        if (this.durabilidadPico <= 0 && targetBlock !== 'empty' && targetBlock !== 'ladder') {
-            console.log("❌ Tu pico está roto, no puedes moverte sobre bloques sin minar.");
+        // 🚨 Verificar si el destino es un bloque de hierro antes de mover
+        if (targetBlock === 'iron') {
+            console.log("⛔ No puedes moverte sobre bloques de hierro.");
             this.moving = false;
             return;
         }
 
-        // 🚨 Bloquear la subida si el pico está roto y no hay escalera
-        if (dy === -1 && this.durabilidadPico <= 0 && targetBlock !== 'ladder') {
-            console.log("❌ Tu pico está roto, no puedes subir por bloques sin minar.");
-            this.moving = false;
-            return;
+        // 🚨 Si el bloque de destino NO es vacío ni escalera, verificar si el pico puede minarlo
+        if (targetBlock !== 'empty' && targetBlock !== 'ladder') {
+            if (!this.materialesPermitidos[this.picoActual].includes(targetBlock)) {
+                console.log(`❌ No puedes moverte sobre ${targetBlock} con tu ${this.picoActual}.`);
+                this.moving = false;
+                return;
+            }
         }
 
         this.currentTween = this.tweens.add({
@@ -1519,9 +1524,6 @@ class GameScene extends Phaser.Scene {
             duration: 200,
             ease: 'Quadratic.Out',
             onComplete: () => {
-                const gridX = Math.floor(targetX / tileSize);
-                const gridY = Math.floor(targetY / tileSize);
-
                 this.processBlock(gridX, gridY);
 
                 // ✅ Si el bloque de destino es vacío y se mantiene la barra espaciadora, colocar una escalera
@@ -1553,19 +1555,19 @@ class GameScene extends Phaser.Scene {
 
         const block = (this.grid[gridX] && this.grid[gridX][gridY]) ? this.grid[gridX][gridY] : null;
         if (block) {
-            // 🚨 Verificar si el bloque es vacío o una escalera para evitar desgaste innecesario
-            if (block.type === 'empty' || block.type === 'ladder') {
-                console.log("⬜ Pasaste sobre un bloque vacío, el pico no se desgasta.");
-                return;
-            }
-
             // 🚨 Verificar si el bloque es de hierro antes de permitir el minado
             if (block.type === 'iron') {
                 console.log("⛏️ No puedes minar este bloque de hierro.");
                 return;
             }
 
-            // ✅ Reducir la durabilidad del pico en 1 (solo si se mina un bloque real)
+            // 🚨 Verificar si el pico actual puede minar este bloque
+            if (!this.materialesPermitidos[this.picoActual].includes(block.type)) {
+                console.log(`❌ Tu ${this.picoActual} no puede minar ${block.type}.`);
+                return;
+            }
+
+            // ✅ Reducir la durabilidad del pico en 1
             this.durabilidadPico -= 1;
 
             // ✅ Guardar el tipo del bloque antes de cambiarlo a `empty`
