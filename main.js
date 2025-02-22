@@ -1433,19 +1433,16 @@ class GameScene extends Phaser.Scene {
 
     startMovement(dx, dy) {
         if (this.moving) return; // Evitar iniciar si ya está en movimiento
-        this.moving = true;
-        this.isLadderMovement = false;
+
         const tileSize = this.tileSize;
         const targetX = this.player.x + dx;
         const targetY = this.player.y + dy;
-
         const gridX = Math.floor(targetX / tileSize);
         const gridY = Math.floor(targetY / tileSize);
 
         // 🚨 Verificar si el destino está dentro de los límites de la cuadrícula
         if (!this.grid[gridX] || !this.grid[gridX][gridY]) {
             console.log("⛔ No puedes moverte fuera de los límites.");
-            this.moving = false;
             return;
         }
 
@@ -1454,7 +1451,12 @@ class GameScene extends Phaser.Scene {
         // 🚨 Verificar si el destino es un bloque de hierro antes de mover
         if (targetBlock === 'iron') {
             console.log("⛔ No puedes moverte sobre bloques de hierro.");
-            this.moving = false;
+            return;
+        }
+
+        // 🚨 Si el pico está roto, permitir movimiento solo en `empty` y `ladder`
+        if (this.durabilidadPico <= 0 && targetBlock !== 'empty' && targetBlock !== 'ladder') {
+            console.log("❌ Tu pico está roto, solo puedes moverte en bloques vacíos o escaleras.");
             return;
         }
 
@@ -1462,11 +1464,11 @@ class GameScene extends Phaser.Scene {
         if (targetBlock !== 'empty' && targetBlock !== 'ladder') {
             if (!this.materialesPermitidos[this.picoActual].includes(targetBlock)) {
                 console.log(`❌ No puedes moverte sobre ${targetBlock} con tu ${this.picoActual}.`);
-                this.moving = false;
                 return;
             }
         }
 
+        this.moving = true;
         this.currentTween = this.tweens.add({
             targets: this.player,
             x: targetX,
@@ -1480,22 +1482,19 @@ class GameScene extends Phaser.Scene {
             }
         });
     }
-    
+
     startMovementWithLadder(dx, dy) {
         if (this.moving) return;
-        this.moving = true;
-        this.isLadderMovement = true;
+
         const tileSize = this.tileSize;
         const targetX = this.player.x + dx;
         const targetY = this.player.y + dy;
-
         const gridX = Math.floor(targetX / tileSize);
         const gridY = Math.floor(targetY / tileSize);
 
         // 🚨 Verificar si el destino está dentro de los límites de la cuadrícula
         if (!this.grid[gridX] || !this.grid[gridX][gridY]) {
             console.log("⛔ No puedes moverte fuera de los límites.");
-            this.moving = false;
             return;
         }
 
@@ -1504,7 +1503,12 @@ class GameScene extends Phaser.Scene {
         // 🚨 Verificar si el destino es un bloque de hierro antes de mover
         if (targetBlock === 'iron') {
             console.log("⛔ No puedes moverte sobre bloques de hierro.");
-            this.moving = false;
+            return;
+        }
+
+        // 🚨 Si el pico está roto, permitir movimiento solo en `empty` y `ladder`
+        if (this.durabilidadPico <= 0 && targetBlock !== 'empty' && targetBlock !== 'ladder') {
+            console.log("❌ Tu pico está roto, solo puedes moverte en bloques vacíos o escaleras.");
             return;
         }
 
@@ -1512,11 +1516,11 @@ class GameScene extends Phaser.Scene {
         if (targetBlock !== 'empty' && targetBlock !== 'ladder') {
             if (!this.materialesPermitidos[this.picoActual].includes(targetBlock)) {
                 console.log(`❌ No puedes moverte sobre ${targetBlock} con tu ${this.picoActual}.`);
-                this.moving = false;
                 return;
             }
         }
 
+        this.moving = true;
         this.currentTween = this.tweens.add({
             targets: this.player,
             x: targetX,
@@ -1526,18 +1530,23 @@ class GameScene extends Phaser.Scene {
             onComplete: () => {
                 this.processBlock(gridX, gridY);
 
-                // ✅ Si el bloque de destino es vacío y se mantiene la barra espaciadora, colocar una escalera
-                if (gridY >= 3 && this.cursors.space.isDown && this.cantidadEscaleras > 0 &&
-                    this.grid[gridX] && this.grid[gridX][gridY] && this.grid[gridX][gridY].type === 'empty') {
+                // ✅ Solo intentar colocar una escalera si hay disponibles
+                if (this.cantidadEscaleras > 0) {
+                    if (this.cursors.space.isDown && gridY >= 3 &&
+                        this.grid[gridX] && this.grid[gridX][gridY] &&
+                        this.grid[gridX][gridY].type === 'empty') {
 
-                    if (this.actualizarContadorEscaleras()) {
-                        this.grid[gridX][gridY].type = 'ladder';
-                        this.grid[gridX][gridY].sprite = this.add.image(
-                            gridX * this.tileSize,
-                            gridY * this.tileSize,
-                            'ladder'
-                        ).setOrigin(0).setDisplaySize(tileSize, tileSize).setDepth(1);
+                        if (this.actualizarContadorEscaleras()) {
+                            this.grid[gridX][gridY].type = 'ladder';
+                            this.grid[gridX][gridY].sprite = this.add.image(
+                                gridX * this.tileSize,
+                                gridY * this.tileSize,
+                                'ladder'
+                            ).setOrigin(0).setDisplaySize(tileSize, tileSize).setDepth(1);
+                        }
                     }
+                } else {
+                    console.log("🚨 No tienes más escaleras, pero puedes seguir moviéndote.");
                 }
 
                 this.moving = false;
