@@ -438,8 +438,17 @@ class GameScene extends Phaser.Scene {
             .setScrollFactor(0)
             .setDepth(12);
 
-        // Inicializar la durabilidad del pico
-        this.durabilidadPico = 100; // 100% al inicio
+        // Durabilidad de cada tipo de pico
+        this.durabilidadesPicos = {
+            pico_madera: 100,
+            pico_piedra: 200,
+            pico_hierro: 300,
+            pico_oro: 500
+        };
+
+        // Inicializar el pico del jugador con madera
+        this.picoActual = "pico_madera";
+        this.durabilidadPico = this.durabilidadesPicos[this.picoActual]; // Durabilidad inicial
 
         // Crear el fondo de la barra de durabilidad
         this.barraDurabilidadFondo = this.add.rectangle(
@@ -1185,9 +1194,14 @@ class GameScene extends Phaser.Scene {
             this.picoActual = nombre;
             this.iconoPico.setTexture(this.picoActual);
 
-            // Restaurar la durabilidad del pico comprado
-            this.durabilidadPico = 100;
-            this.barraDurabilidad.setScale(1, 1); // Rellenar la barra
+            if (nombre.includes("pico")) {
+                this.picoActual = nombre;
+                this.iconoPico.setTexture(this.picoActual);
+
+                // Restaurar la durabilidad del pico según su tipo
+                this.durabilidadPico = this.durabilidadesPicos[this.picoActual];
+                this.barraDurabilidad.setScale(1, 1); // Rellenar la barra
+            }
         }
     }
 
@@ -1417,13 +1431,36 @@ class GameScene extends Phaser.Scene {
         const targetX = this.player.x + dx;
         const targetY = this.player.y + dy;
 
-        // 🚨 Verificar si el nuevo bloque es de hierro antes de mover 🚨
         const gridX = Math.floor(targetX / tileSize);
         const gridY = Math.floor(targetY / tileSize);
 
-        if (this.grid[gridX] && this.grid[gridX][gridY] && this.grid[gridX][gridY].type === 'iron') {
+        // 🚨 Verificar si el destino está dentro de los límites de la cuadrícula
+        if (!this.grid[gridX] || !this.grid[gridX][gridY]) {
+            console.log("⛔ No puedes moverte fuera de los límites.");
+            this.moving = false;
+            return;
+        }
+
+        const targetBlock = this.grid[gridX][gridY].type;
+
+        // 🚨 Verificar si el destino es un bloque de hierro antes de mover
+        if (targetBlock === 'iron') {
             console.log("⛔ No puedes moverte sobre bloques de hierro.");
-            this.moving = false; // Restablecer el estado de movimiento
+            this.moving = false;
+            return;
+        }
+
+        // 🚨 Verificar si el pico está roto y el jugador intenta moverse a un bloque sin minar
+        if (this.durabilidadPico <= 0 && targetBlock !== 'empty' && targetBlock !== 'ladder') {
+            console.log("❌ Tu pico está roto, no puedes moverte sobre bloques sin minar.");
+            this.moving = false;
+            return;
+        }
+
+        // 🚨 Bloquear la subida si el pico está roto y no hay escalera o espacio vacío
+        if (dy === -1 && this.durabilidadPico <= 0 && targetBlock !== 'ladder') {
+            console.log("❌ Tu pico está roto, no puedes subir por bloques sin minar.");
+            this.moving = false;
             return;
         }
 
@@ -1437,7 +1474,6 @@ class GameScene extends Phaser.Scene {
                 this.processBlock(gridX, gridY);
                 this.moving = false;
                 this.currentTween = null;
-                // Encadenamiento normal (si se sigue pulsando alguna tecla) se procesa en update
             }
         });
     }
@@ -1450,13 +1486,29 @@ class GameScene extends Phaser.Scene {
         const targetX = this.player.x + dx;
         const targetY = this.player.y + dy;
 
-        // 🚨 Verificar si el destino es un bloque de hierro antes de moverse 🚨
         const gridX = Math.floor(targetX / tileSize);
         const gridY = Math.floor(targetY / tileSize);
 
-        if (this.grid[gridX] && this.grid[gridX][gridY] && this.grid[gridX][gridY].type === 'iron') {
-            console.log("⛔ No puedes moverte ni colocar escaleras sobre bloques de hierro.");
-            this.moving = false; // Restablecer el estado de movimiento
+        // 🚨 Verificar si el destino está dentro de los límites de la cuadrícula
+        if (!this.grid[gridX] || !this.grid[gridX][gridY]) {
+            console.log("⛔ No puedes moverte fuera de los límites.");
+            this.moving = false;
+            return;
+        }
+
+        const targetBlock = this.grid[gridX][gridY].type;
+
+        // 🚨 Verificar si el pico está roto y el jugador intenta moverse a un bloque sin minar
+        if (this.durabilidadPico <= 0 && targetBlock !== 'empty' && targetBlock !== 'ladder') {
+            console.log("❌ Tu pico está roto, no puedes moverte sobre bloques sin minar.");
+            this.moving = false;
+            return;
+        }
+
+        // 🚨 Bloquear la subida si el pico está roto y no hay escalera
+        if (dy === -1 && this.durabilidadPico <= 0 && targetBlock !== 'ladder') {
+            console.log("❌ Tu pico está roto, no puedes subir por bloques sin minar.");
+            this.moving = false;
             return;
         }
 
@@ -1467,34 +1519,30 @@ class GameScene extends Phaser.Scene {
             duration: 200,
             ease: 'Quadratic.Out',
             onComplete: () => {
-                // Procesamos el bloque para recolección, etc.
+                const gridX = Math.floor(targetX / tileSize);
+                const gridY = Math.floor(targetY / tileSize);
+
                 this.processBlock(gridX, gridY);
 
-                // Si la celda destino está vacía Y es válida para escalera (fila >= 3), colocamos la escalera
-                if (gridY >= 3 &&
-                    this.grid[gridX] &&
-                    this.grid[gridX][gridY] &&
-                    this.grid[gridX][gridY].type === 'empty') {
+                // ✅ Si el bloque de destino es vacío y se mantiene la barra espaciadora, colocar una escalera
+                if (gridY >= 3 && this.cursors.space.isDown && this.cantidadEscaleras > 0 &&
+                    this.grid[gridX] && this.grid[gridX][gridY] && this.grid[gridX][gridY].type === 'empty') {
 
-                    // Verificar si quedan escaleras antes de colocarla
                     if (this.actualizarContadorEscaleras()) {
                         this.grid[gridX][gridY].type = 'ladder';
                         this.grid[gridX][gridY].sprite = this.add.image(
                             gridX * this.tileSize,
                             gridY * this.tileSize,
                             'ladder'
-                        )
-                            .setOrigin(0)
-                            .setDisplaySize(tileSize, tileSize)
-                            .setDepth(1);
+                        ).setOrigin(0).setDisplaySize(tileSize, tileSize).setDepth(1);
                     }
                 }
+
                 this.moving = false;
                 this.currentTween = null;
             }
         });
     }
-
 
     processBlock(gridX, gridY) {
         // 🚨 Verificar si el pico está roto antes de permitir minar
@@ -1505,9 +1553,9 @@ class GameScene extends Phaser.Scene {
 
         const block = (this.grid[gridX] && this.grid[gridX][gridY]) ? this.grid[gridX][gridY] : null;
         if (block) {
-            // 🚨 Evitar que el pico se desgaste en la superficie (línea 2)
-            if (gridY === 2) {
-                console.log("🌿 Estás en la superficie, el pico no se desgasta.");
+            // 🚨 Verificar si el bloque es vacío o una escalera para evitar desgaste innecesario
+            if (block.type === 'empty' || block.type === 'ladder') {
+                console.log("⬜ Pasaste sobre un bloque vacío, el pico no se desgasta.");
                 return;
             }
 
@@ -1517,99 +1565,64 @@ class GameScene extends Phaser.Scene {
                 return;
             }
 
-            // ✅ Reducir la durabilidad del pico tras minar un bloque (antes de destruir el bloque)
-            this.durabilidadPico -= 10;
+            // ✅ Reducir la durabilidad del pico en 1 (solo si se mina un bloque real)
+            this.durabilidadPico -= 1;
+
+            // ✅ Guardar el tipo del bloque antes de cambiarlo a `empty`
+            const blockType = block.type;
+            block.type = 'empty';
+
+            // ✅ Recolectar minerales y actualizar la UI
+            if (blockType === 'carbon') {
+                this.carbonCount += 1;
+                this.carbonText.setText(`Carbón: ${this.carbonCount}`);
+            } else if (blockType === 'cobre') {
+                this.cobreCount += 1;
+                this.cobreText.setText(`Cobre: ${this.cobreCount}`);
+            } else if (blockType === 'hierro') {
+                this.hierroCount += 1;
+                this.hierroText.setText(`Hierro: ${this.hierroCount}`);
+            } else if (blockType === 'plata') {
+                this.plataCount += 1;
+                this.plataText.setText(`Plata: ${this.plataCount}`);
+            } else if (blockType === 'oro') {
+                this.oroCount = (this.oroCount || 0) + 1;
+                this.oroText.setText(`Oro: ${this.oroCount}`);
+            } else if (blockType === 'rubi') {
+                this.rubiCount = (this.rubiCount || 0) + 1;
+                this.rubiText.setText(`Rubí: ${this.rubiCount}`);
+            } else if (blockType === 'esmeralda') {
+                this.esmeraldaCount += 1;
+                this.esmeraldaText.setText(`Esmeraldas: ${this.esmeraldaCount}`);
+            } else if (blockType === 'diamante') {
+                this.diamanteCount = (this.diamanteCount || 0) + 1;
+                this.diamanteText.setText(`Diamantes: ${this.diamanteCount}`);
+            }
+
+            // ✅ Eliminar todos los sprites del bloque
+            if (block.sprite) {
+                block.sprite.destroy();
+                block.sprite = null;
+            }
+            if (block.overlaySprite) {
+                block.overlaySprite.destroy();
+                block.overlaySprite = null;
+            }
+            if (block.baseSprite) {
+                block.baseSprite.destroy();
+                block.baseSprite = null;
+            }
 
             // ✅ Actualizar la barra de durabilidad en la UI
-            const porcentaje = this.durabilidadPico / 100;
+            const porcentaje = this.durabilidadPico / this.durabilidadesPicos[this.picoActual];
             this.barraDurabilidad.setScale(porcentaje, 1);
 
-            // ✅ Si la durabilidad llega a 0, el pico se rompe y no se puede minar más
+            // ✅ Si la durabilidad llega a 0, el pico se rompe después de minar correctamente
             if (this.durabilidadPico <= 0) {
                 console.log("❌ Tu pico se ha roto. No puedes minar más hasta comprar uno nuevo.");
                 this.durabilidadPico = 0;
-                this.barraDurabilidad.setScale(0, 1); // Vaciar la barra
-                return;
+                this.barraDurabilidad.setScale(0, 1);
             }
-
-            // Recolectar carbón
-            if (block.type === 'carbon') {
-                this.carbonCount += 1;
-                this.carbonText.setText(`Carbón: ${this.carbonCount}`);
-                block.type = 'empty';
-                if (block.overlaySprite) {
-                    block.overlaySprite.destroy();
-                    block.overlaySprite = null;
-                }
-                if (block.baseSprite) {
-                    block.baseSprite.destroy();
-                    block.baseSprite = null;
-                }
-            }
-            // Recolectar cobre
-            if (block.type === 'cobre') {
-                this.cobreCount += 1;
-                this.cobreText.setText(`Cobre: ${this.cobreCount}`);
-                block.type = 'empty';
-                if (block.sprite) block.sprite.destroy();
-            }
-            // Recolectar hierro
-            if (block.type === 'hierro') {
-                this.hierroCount += 1;
-                this.hierroText.setText(`Hierro: ${this.hierroCount}`);
-                block.type = 'empty';
-                if (block.sprite) block.sprite.destroy();
-            }
-            // Recolectar plata
-            if (block.type === 'plata') {
-                this.plataCount += 1;
-                this.plataText.setText(`Plata: ${this.plataCount}`);
-                block.type = 'empty';
-                if (block.sprite) block.sprite.destroy();
-            }
-            // Recolectar oro
-            if (block.type === 'oro') {
-                this.oroCount = (this.oroCount || 0) + 1;
-                this.oroText.setText(`Oro: ${this.oroCount}`);
-                block.type = 'empty';
-                if (block.sprite) block.sprite.destroy();
-            }
-            // Recolectar rubí
-            if (block.type === 'rubi') {
-                this.rubiCount = (this.rubiCount || 0) + 1;
-                this.rubiText.setText(`Rubí: ${this.rubiCount}`);
-                block.type = 'empty';
-                if (block.sprite) block.sprite.destroy();
-            }
-            // Recolectar esmeralda
-            if (block.type === 'esmeralda') {
-                this.esmeraldaCount += 1;
-                this.esmeraldaText.setText(`Esmeraldas: ${this.esmeraldaCount}`);
-                block.type = 'empty';
-                if (block.sprite) {
-                    block.sprite.destroy();
-                    block.sprite = null;
-                }
-            }
-            // Recolectar diamante
-            if (block.type === 'diamante') {
-                this.diamanteCount = (this.diamanteCount || 0) + 1;
-                this.diamanteText.setText(`Diamantes: ${this.diamanteCount}`);
-                block.type = 'empty';
-                if (block.sprite) {
-                    block.sprite.destroy();
-                    block.sprite = null;
-                }
-            }
-            // Si el bloque es de tierra o piedra, lo dejamos vacío
-            if (block.type === 'tierra' || block.type === 'piedra') {
-                block.type = 'empty';
-                if (block.sprite) block.sprite.destroy();
-            }
-
-            // Vaciar el bloque tras recolectar
-            block.type = 'empty';
-            if (block.sprite) block.sprite.destroy();
         }
     }
 
