@@ -94,6 +94,7 @@ class GameScene extends Phaser.Scene {
         this.load.image('pico_piedra', 'assets/pico_piedra.png');
         this.load.image('pico_hierro', 'assets/pico_hierro.png');
         this.load.image('pico_oro', 'assets/pico_oro.png');
+        this.load.image('bloque_hierro', 'assets/bloque_hierro.png');
     }
 
     create() {
@@ -365,12 +366,23 @@ class GameScene extends Phaser.Scene {
         }
 
         // Añadir el personaje
-        this.player = this.physics.add.sprite(2 * this.tileSize, 2 * this.tileSize, 'personaje')
+        this.player = this.physics.add.sprite(8 * this.tileSize, 2 * this.tileSize, 'personaje')
             .setOrigin(0)
             .setDepth(5); // Profundidad correcta para estar debajo del menú pero sobre otros elementos
         this.player.displayWidth = this.tileSize; // Ajustar ancho al tamaño de la cuadrícula
         this.player.displayHeight = this.tileSize; // Ajustar alto al tamaño de la cuadrícula
         this.player.setCollideWorldBounds(true);
+        this.physics.add.collider(this.player, this.bloquesHierro);
+
+        const spawnX = Math.floor(this.player.x / this.tileSize);
+        const spawnY = Math.floor(this.player.y / this.tileSize) + 1; // Justo debajo del jugador
+
+        this.grid[spawnX][spawnY] = {
+            type: 'iron', sprite: this.add.image(spawnX * this.tileSize, spawnY * this.tileSize, 'bloque_hierro')
+                .setOrigin(0)
+                .setDisplaySize(this.tileSize, this.tileSize)
+                .setDepth(1) // Mantenerlo detrás del jugador
+        };
 
         this.cameras.main.startFollow(this.player, true, 1, 1);
 
@@ -657,8 +669,8 @@ class GameScene extends Phaser.Scene {
             }
         ).setOrigin(0.5, 0).setScrollFactor(0).setDepth(100);
 
-        // Colocar la "Refineria" en la celda (15,2)
-        const posicionXRefineria = 7 * this.tileSize; // Convertir coordenada de la cuadrícula a píxeles
+        // Colocar la "Refineria" en la celda (3,3)
+        const posicionXRefineria = 3 * this.tileSize; // Convertir coordenada de la cuadrícula a píxeles
         const posicionYRefineria = 3 * this.tileSize; // La refineria debe estar en la superficie
 
         this.refineria = this.add.image(posicionXRefineria, posicionYRefineria, 'refineria')
@@ -666,8 +678,8 @@ class GameScene extends Phaser.Scene {
             .setDepth(4) // Asegurar que esté por encima de otros objetos
             .setDisplaySize(this.tileSize * 3, this.tileSize * 3); // Ajustar tamaño si es necesario
 
-        // Colocar el "Arsenal Minero" en la celda (15,2)
-        const posicionXArsenal = 15 * this.tileSize;  // Columna 15
+        // Colocar el "Arsenal Minero" en la celda (11,3)
+        const posicionXArsenal = 11 * this.tileSize;  // Columna 15
         const posicionYArsenal = 3 * this.tileSize;    // Fila 2
 
         this.arsenal = this.add.image(posicionXArsenal, posicionYArsenal, 'arsenal')
@@ -680,6 +692,29 @@ class GameScene extends Phaser.Scene {
 
         // Crear el contenedor del menú del arsenal
         this.menuArsenalContainer = this.add.container(0, 0).setVisible(false).setDepth(20);
+
+        // Crear un grupo de colisión para los bloques de hierro
+        this.bloquesHierro = this.physics.add.staticGroup();
+
+        const tiendas = [
+            { x: [3, 4, 5], y: 2 }, // Tienda de vender (bloques en X=3, 4 y 5)
+            { x: [11, 12, 13], y: 2 } // Tienda de comprar (bloques en X=11, 12 y 13)
+        ];
+
+        tiendas.forEach(tienda => {
+            tienda.x.forEach(tiendaX => { // Iterar sobre cada X en la tienda
+                const tiendaY = tienda.y + 1; // Justo debajo de la tienda
+
+                // Crear bloque de hierro con cuerpo estático para colisiones
+                const bloque = this.bloquesHierro.create(tiendaX * this.tileSize, tiendaY * this.tileSize, 'bloque_hierro')
+                    .setOrigin(0)
+                    .setDisplaySize(this.tileSize, this.tileSize)
+                    .refreshBody(); // Refrescar el cuerpo de colisión
+
+                // Guardar el bloque en la grid para evitar que sea minado
+                this.grid[tiendaX][tiendaY] = { type: 'iron', sprite: bloque };
+            });
+        });
 
         // Inicializar el contador de monedas
         this.monedaCount = 0;
@@ -779,7 +814,7 @@ class GameScene extends Phaser.Scene {
             .fillStyle(0x00ff00, 1)
             .fillRoundedRect(22, 42, 200, 12, 6);
 
-        this.player.setPosition(2 * this.tileSize, 2 * this.tileSize); // Reiniciar posición del jugador
+        this.player.setPosition(8 * this.tileSize, 2 * this.tileSize); // Reiniciar posición del jugador
         this.input.keyboard.enabled = true; // Reactivar controles
         this.moving = false; // Permitir movimiento de nuevo
     }
@@ -1168,16 +1203,16 @@ class GameScene extends Phaser.Scene {
 
         // Si se pulsa la barra espaciadora (una sola vez)...
         if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-            // Primero, si el jugador está en la celda de la refineria (7/8/9,2), se abre la refineria
-            if ((playerGridX === 7 || playerGridX === 8 || playerGridX === 9) && playerGridY === 2) {
+            // Primero, si el jugador está en la celda de la refineria (3/4/5,2), se abre la refineria
+            if ((playerGridX === 3 || playerGridX === 4 || playerGridX === 5) && playerGridY === 2) {
                 console.log("🟢 Abriendo menú de la refineria...");
                 this.abrirMenuRefineria();
                 return; // Salir del update para no ejecutar más código en este frame
             }
 
-            // abrir el arsenal al estar en las columnas 14-16 ---
-            const buyStoreGridXMin = 15;
-            const buyStoreGridXMax = 17;
+            // abrir el arsenal al estar en las columnas 11-13 ---
+            const buyStoreGridXMin = 11;
+            const buyStoreGridXMax = 13;
 
             if ((playerGridX >= buyStoreGridXMin && playerGridX <= buyStoreGridXMax) && playerGridY === 2) {
                 console.log("🟢 Abriendo menú del arsenal");
@@ -1350,6 +1385,16 @@ class GameScene extends Phaser.Scene {
         const targetX = this.player.x + dx;
         const targetY = this.player.y + dy;
 
+        // 🚨 Verificar si el nuevo bloque es de hierro antes de mover 🚨
+        const gridX = Math.floor(targetX / tileSize);
+        const gridY = Math.floor(targetY / tileSize);
+
+        if (this.grid[gridX] && this.grid[gridX][gridY] && this.grid[gridX][gridY].type === 'iron') {
+            console.log("⛔ No puedes moverte sobre bloques de hierro.");
+            this.moving = false; // Restablecer el estado de movimiento
+            return;
+        }
+
         this.currentTween = this.tweens.add({
             targets: this.player,
             x: targetX,
@@ -1357,8 +1402,6 @@ class GameScene extends Phaser.Scene {
             duration: 200,
             ease: 'Quadratic.Out',
             onComplete: () => {
-                const gridX = Math.floor(targetX / tileSize);
-                const gridY = Math.floor(targetY / tileSize);
                 this.processBlock(gridX, gridY);
                 this.moving = false;
                 this.currentTween = null;
@@ -1375,6 +1418,16 @@ class GameScene extends Phaser.Scene {
         const targetX = this.player.x + dx;
         const targetY = this.player.y + dy;
 
+        // 🚨 Verificar si el destino es un bloque de hierro antes de moverse 🚨
+        const gridX = Math.floor(targetX / tileSize);
+        const gridY = Math.floor(targetY / tileSize);
+
+        if (this.grid[gridX] && this.grid[gridX][gridY] && this.grid[gridX][gridY].type === 'iron') {
+            console.log("⛔ No puedes moverte ni colocar escaleras sobre bloques de hierro.");
+            this.moving = false; // Restablecer el estado de movimiento
+            return;
+        }
+
         this.currentTween = this.tweens.add({
             targets: this.player,
             x: targetX,
@@ -1382,10 +1435,9 @@ class GameScene extends Phaser.Scene {
             duration: 200,
             ease: 'Quadratic.Out',
             onComplete: () => {
-                const gridX = Math.floor(targetX / tileSize);
-                const gridY = Math.floor(targetY / tileSize);
                 // Procesamos el bloque para recolección, etc.
                 this.processBlock(gridX, gridY);
+
                 // Si la celda destino está vacía Y es válida para escalera (fila >= 3), colocamos la escalera
                 if (gridY >= 3 &&
                     this.grid[gridX] &&
@@ -1410,6 +1462,7 @@ class GameScene extends Phaser.Scene {
             }
         });
     }
+
 
     processBlock(gridX, gridY) {
         const block = (this.grid[gridX] && this.grid[gridX][gridY]) ? this.grid[gridX][gridY] : null;
@@ -1488,6 +1541,11 @@ class GameScene extends Phaser.Scene {
                 block.type = 'empty';
                 if (block.sprite) block.sprite.destroy();
             }
+        }
+
+        if (this.grid[gridX][gridY].type === 'iron') {
+            console.log("⛏️ No puedes minar este bloque de hierro.");
+            return;
         }
     }
 
