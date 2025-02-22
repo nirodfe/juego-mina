@@ -438,6 +438,19 @@ class GameScene extends Phaser.Scene {
             .setScrollFactor(0)
             .setDepth(12);
 
+        // Inicializar la durabilidad del pico
+        this.durabilidadPico = 100; // 100% al inicio
+
+        // Crear el fondo de la barra de durabilidad
+        this.barraDurabilidadFondo = this.add.rectangle(
+            this.iconoPico.x, this.iconoPico.y + 40, 70, 10, 0x555555
+        ).setOrigin(0.5).setScrollFactor(0).setDepth(11);
+
+        // Crear la barra de durabilidad del pico
+        this.barraDurabilidad = this.add.rectangle(
+            this.iconoPico.x - 35, this.iconoPico.y + 40, 70, 10, 0x00ff00
+        ).setOrigin(0, 0.5).setScrollFactor(0).setDepth(12);
+
         // Inicializar monedas
         this.monedas = 0;
 
@@ -1168,6 +1181,14 @@ class GameScene extends Phaser.Scene {
         } else {
             console.log(`❌ No tienes suficientes monedas para comprar ${nombre}.`);
         }
+        if (nombre.includes("pico")) {
+            this.picoActual = nombre;
+            this.iconoPico.setTexture(this.picoActual);
+
+            // Restaurar la durabilidad del pico comprado
+            this.durabilidadPico = 100;
+            this.barraDurabilidad.setScale(1, 1); // Rellenar la barra
+        }
     }
 
     actualizarContadorEscaleras() {
@@ -1476,8 +1497,41 @@ class GameScene extends Phaser.Scene {
 
 
     processBlock(gridX, gridY) {
+        // 🚨 Verificar si el pico está roto antes de permitir minar
+        if (this.durabilidadPico <= 0) {
+            console.log("❌ No puedes minar más bloques, tu pico está roto.");
+            return;
+        }
+
         const block = (this.grid[gridX] && this.grid[gridX][gridY]) ? this.grid[gridX][gridY] : null;
         if (block) {
+            // 🚨 Evitar que el pico se desgaste en la superficie (línea 2)
+            if (gridY === 2) {
+                console.log("🌿 Estás en la superficie, el pico no se desgasta.");
+                return;
+            }
+
+            // 🚨 Verificar si el bloque es de hierro antes de permitir el minado
+            if (block.type === 'iron') {
+                console.log("⛏️ No puedes minar este bloque de hierro.");
+                return;
+            }
+
+            // ✅ Reducir la durabilidad del pico tras minar un bloque (antes de destruir el bloque)
+            this.durabilidadPico -= 10;
+
+            // ✅ Actualizar la barra de durabilidad en la UI
+            const porcentaje = this.durabilidadPico / 100;
+            this.barraDurabilidad.setScale(porcentaje, 1);
+
+            // ✅ Si la durabilidad llega a 0, el pico se rompe y no se puede minar más
+            if (this.durabilidadPico <= 0) {
+                console.log("❌ Tu pico se ha roto. No puedes minar más hasta comprar uno nuevo.");
+                this.durabilidadPico = 0;
+                this.barraDurabilidad.setScale(0, 1); // Vaciar la barra
+                return;
+            }
+
             // Recolectar carbón
             if (block.type === 'carbon') {
                 this.carbonCount += 1;
@@ -1552,11 +1606,10 @@ class GameScene extends Phaser.Scene {
                 block.type = 'empty';
                 if (block.sprite) block.sprite.destroy();
             }
-        }
 
-        if (this.grid[gridX][gridY].type === 'iron') {
-            console.log("⛏️ No puedes minar este bloque de hierro.");
-            return;
+            // Vaciar el bloque tras recolectar
+            block.type = 'empty';
+            if (block.sprite) block.sprite.destroy();
         }
     }
 
