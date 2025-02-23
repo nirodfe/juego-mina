@@ -51,9 +51,9 @@ class MenuScene extends Phaser.Scene {
 class GameScene extends Phaser.Scene {
     constructor() {
         super('GameScene');
-        this.moving = false; // Bandera para controlar si está en movimiento
-        this.direction = null; // Dirección actual de movimiento
-        this.currentTween = null;     // Guardará el tween en curso
+        this.moving = false;
+        this.currentTween = null;
+        this.teclasHabilitadas = true; // Asegurar que las teclas están activas después de reiniciar        
         this.isLadderMovement = false; // Indicará si el movimiento actual es con escalera
     }
 
@@ -374,6 +374,10 @@ class GameScene extends Phaser.Scene {
         this.player.setCollideWorldBounds(true);
         this.physics.add.collider(this.player, this.bloquesHierro);
 
+        // ✅ Asegurar que el jugador comienza en la posición correcta (8,2)
+        this.player.setPosition(this.tileSize * 8, this.tileSize * 2);
+        console.log(`📍 Posición inicial corregida: X=${this.player.x}, Y=${this.player.y}`);
+
         const spawnX = Math.floor(this.player.x / this.tileSize);
         const spawnY = Math.floor(this.player.y / this.tileSize) + 1; // Justo debajo del jugador
 
@@ -481,6 +485,8 @@ class GameScene extends Phaser.Scene {
             .setDepth(100)
             .setScrollFactor(0)
             .setVisible(false); // Ocultarlo hasta que se necesite
+
+        this.juegoTerminado = false; // 🔹 Controla si ya se ha mostrado la pantalla de finalización
 
         // Crear el menú de la mochila (oculto al principio)
         this.menuContainer = this.add.container(0, 0).setVisible(false).setDepth(15); // Establecer profundidad alta para el menú
@@ -1000,30 +1006,18 @@ class GameScene extends Phaser.Scene {
         this.cursors.right.enabled = true;
         this.cursors.up.enabled = true;
         this.cursors.down.enabled = true;
-    }
 
-    cerrarMenuArsenal() {
-        if (!this.menuArsenalContainer.visible) return; // Si ya está cerrado, no hacer nada
-
-        console.log("🔴 Cerrando menú del arsenal...");
-
-        // Ocultar el contador de monedas al cerrar la refineria
-        this.monedaIcono.setVisible(false);
-        this.monedaTexto.setVisible(false);
-
-        this.menuArsenalContainer.setVisible(false); // Ocultar el menú de la refineria
-        this.physics.world.resume(); // Reanudar el mundo físico
-        this.cameras.main.startFollow(this.player); // Volver a seguir al jugador
-
-        // Asegurar que el personaje no tenga movimiento residual
+        // ✅ Asegurar que el personaje no tenga movimiento residual
         this.player.setVelocity(0, 0);
         this.moving = false;
+        this.currentTween = null; // Detener cualquier tween activo
 
-        // Reactivar movimiento del personaje
-        this.cursors.left.enabled = true;
-        this.cursors.right.enabled = true;
-        this.cursors.up.enabled = true;
-        this.cursors.down.enabled = true;
+        // ✅ Reiniciar las teclas de movimiento
+        this.cursors.left.isDown = false;
+        this.cursors.right.isDown = false;
+        this.cursors.up.isDown = false;
+        this.cursors.down.isDown = false;
+
     }
 
     abrirMenuArsenal() {
@@ -1136,6 +1130,41 @@ class GameScene extends Phaser.Scene {
         this.menuArsenalContainer.setVisible(true);
         this.physics.world.pause(); // Pausar el mundo físico
         this.cameras.main.stopFollow(); // Detener el seguimiento de la cámara
+    }
+
+    cerrarMenuArsenal() {
+        if (!this.menuArsenalContainer.visible) return; // Si ya está cerrado, no hacer nada
+
+        console.log("🔴 Cerrando menú del arsenal...");
+
+        // Ocultar el contador de monedas al cerrar la refineria
+        this.monedaIcono.setVisible(false);
+        this.monedaTexto.setVisible(false);
+
+        this.menuArsenalContainer.setVisible(false); // Ocultar el menú de la refineria
+        this.physics.world.resume(); // Reanudar el mundo físico
+        this.cameras.main.startFollow(this.player); // Volver a seguir al jugador
+
+        // Asegurar que el personaje no tenga movimiento residual
+        this.player.setVelocity(0, 0);
+        this.moving = false;
+
+        // Reactivar movimiento del personaje
+        this.cursors.left.enabled = true;
+        this.cursors.right.enabled = true;
+        this.cursors.up.enabled = true;
+        this.cursors.down.enabled = true;
+
+        // ✅ Asegurar que el personaje no tenga movimiento residual
+        this.player.setVelocity(0, 0);
+        this.moving = false;
+        this.currentTween = null; // Detener cualquier tween activo
+
+        // ✅ Reiniciar las teclas de movimiento
+        this.cursors.left.isDown = false;
+        this.cursors.right.isDown = false;
+        this.cursors.up.isDown = false;
+        this.cursors.down.isDown = false;
     }
 
     // Función para vender un mineral
@@ -1338,6 +1367,11 @@ class GameScene extends Phaser.Scene {
             return; // No permitir nuevos movimientos mientras el personaje está en movimiento
         }
 
+        // ✅ Asegurar que el jugador puede moverse en las filas 2, 3 y 4 sin problemas
+        if (playerGridY >= 2 && playerGridY <= 4) {
+            console.log("🟢 Permitiendo movimiento en la superficie sin restricciones.");
+        }
+
         if (this.cursors.left.isDown) {
             if (this.player.x > 0) {
                 if (this.spaceKey.isDown) {
@@ -1448,6 +1482,11 @@ class GameScene extends Phaser.Scene {
 
         const targetBlock = this.grid[gridX][gridY].type;
 
+        // ✅ Permitir movimiento en filas 2, 3 y 4
+        if (gridY >= 2 && gridY <= 4) {
+            console.log(`🟢 Moviéndome en fila ${gridY} sin restricciones.`);
+        }
+
         // 🚨 Verificar si el destino es un bloque de hierro antes de mover
         if (targetBlock === 'iron') {
             console.log("⛔ No puedes moverte sobre bloques de hierro.");
@@ -1499,6 +1538,11 @@ class GameScene extends Phaser.Scene {
         }
 
         const targetBlock = this.grid[gridX][gridY].type;
+
+        // ✅ Permitir movimiento en filas 2, 3 y 4 al usar escaleras
+        if (gridY >= 2 && gridY <= 4) {
+            console.log(`🟢 Moviéndome en fila ${gridY} con escalera.`);
+        }
 
         // 🚨 Verificar si el destino es un bloque de hierro antes de mover
         if (targetBlock === 'iron') {
@@ -1572,7 +1616,7 @@ class GameScene extends Phaser.Scene {
 
             // 🚨 Verificar si el pico actual puede minar este bloque
             if (!this.materialesPermitidos[this.picoActual].includes(block.type)) {
-                console.log(`❌ Tu ${this.picoActual} no puede minar ${block.type}.`);
+                console.log(`❌ No puedes minar ${block.type} con tu ${this.picoActual}.`);
                 return;
             }
 
@@ -1634,7 +1678,73 @@ class GameScene extends Phaser.Scene {
                 this.durabilidadPico = 0;
                 this.barraDurabilidad.setScale(0, 1);
             }
+
+            // ✅ Comprobar si se han minado todos los minerales
+            this.verificarFinDelJuego();
         }
+    }
+
+    verificarFinDelJuego() {
+        if (this.juegoTerminado) return; // 🔹 Evitar que se ejecute más de una vez
+
+        for (let x = 0; x < this.grid.length; x++) {
+            for (let y = 0; y < this.grid[x].length; y++) {
+                if (this.grid[x][y] && ['carbon', 'cobre', 'hierro', 'plata', 'oro', 'rubi', 'esmeralda', 'diamante'].includes(this.grid[x][y].type)) {
+                    return; // 🚨 Aún quedan minerales, el juego no ha terminado
+                }
+            }
+        }
+
+        // ✅ Todos los minerales han sido minados, activar la pantalla final
+        this.juegoTerminado = true;
+        this.mostrarPantallaFinal();
+    }
+
+    mostrarPantallaFinal() {
+        console.log("🏆 ¡Felicidades! Has minado todos los minerales.");
+
+        // ✅ Bloquear completamente el movimiento del jugador
+        this.player.setVelocity(0, 0);
+        this.moving = false;
+        // Desactivar las teclas de movimiento, pero mantener la barra espaciadora
+        this.cursors.left.enabled = false;
+        this.cursors.right.enabled = false;
+        this.cursors.up.enabled = false;
+        this.cursors.down.enabled = false;
+        this.spaceKey.enabled = false;
+
+        // ✅ Detener cualquier animación de movimiento (Tween)
+        if (this.currentTween) {
+            this.currentTween.stop();
+            this.currentTween = null;
+        }
+
+        // ✅ Crear un fondo semitransparente
+        const overlay = this.add.rectangle(
+            this.cameras.main.scrollX + this.cameras.main.width / 2,
+            this.cameras.main.scrollY + this.cameras.main.height / 2,
+            this.cameras.main.width,
+            this.cameras.main.height,
+            0x000000,
+            0.7
+        ).setDepth(100);
+
+        // ✅ Crear el texto de felicitación
+        const textoFinal = this.add.text(
+            this.cameras.main.scrollX + this.cameras.main.width / 2,
+            this.cameras.main.scrollY + this.cameras.main.height / 2,
+            "🎉 ¡Felicidades!\nHas completado Miner Madness",
+            {
+                fontSize: "48px",
+                fill: "#ffffff",
+                fontStyle: "bold",
+                fontFamily: "Arial",
+                align: "center"
+            }
+        ).setOrigin(0.5).setDepth(101);
+
+        // ✅ Detener completamente el juego
+        this.physics.world.pause();
     }
 
     startFall(fallDistance) {
