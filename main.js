@@ -1217,6 +1217,10 @@ class GameScene extends Phaser.Scene {
                 // Si se compra un pico, actualizar el icono en la UI
                 this.picoActual = nombre;
                 this.iconoPico.setTexture(this.picoActual);
+
+                // Restaurar la durabilidad del pico según su tipo
+                this.durabilidadPico = this.durabilidadesPicos[this.picoActual];
+                this.barraDurabilidad.setScale(1, 1); // Rellenar la barra
             }
 
             console.log(`🟢 Compraste ${nombre}. Te quedan ${this.monedas} monedas.`);
@@ -1226,19 +1230,6 @@ class GameScene extends Phaser.Scene {
             }
         } else {
             console.log(`❌ No tienes suficientes monedas para comprar ${nombre}.`);
-        }
-        if (nombre.includes("pico")) {
-            this.picoActual = nombre;
-            this.iconoPico.setTexture(this.picoActual);
-
-            if (nombre.includes("pico")) {
-                this.picoActual = nombre;
-                this.iconoPico.setTexture(this.picoActual);
-
-                // Restaurar la durabilidad del pico según su tipo
-                this.durabilidadPico = this.durabilidadesPicos[this.picoActual];
-                this.barraDurabilidad.setScale(1, 1); // Rellenar la barra
-            }
         }
     }
 
@@ -1779,16 +1770,6 @@ class GameScene extends Phaser.Scene {
         };
 
         fallStep();
-    }
-
-    triggerEffect(type) {
-        if (type === 'tierra') {
-            console.log('Efecto: Minero pica tierra');
-            // Eliminamos el cambio de color
-        } else if (type === 'piedra') {
-            console.log('Efecto: Minero pica piedra');
-            // Eliminamos el cambio de color
-        }
     }
 }
 
