@@ -22,7 +22,12 @@ class MenuScene extends Phaser.Scene {
             { fontSize: '32px', fill: '#000', fontStyle: 'bold' })
             .setOrigin(0.5)
             .setInteractive()
-            .on('pointerdown', () => this.scene.start('GameScene'))
+            .on("pointerdown", () => {
+                if (game.scene.isActive("GameScene")) {
+                    game.scene.stop("GameScene"); // 🔹 Detener la escena anterior para limpiar todo
+                }
+                game.scene.start("GameScene"); // 🔹 Iniciar la escena desde cero
+            })
             .on('pointerover', () => this.playButton.setStyle({ fill: '#8b4513' }))
             .on('pointerout', () => this.playButton.setStyle({ fill: '#000' }));
 
@@ -172,6 +177,59 @@ function guardarPartida() {
         });
 }
 
+function cargarPartida(userId) {
+    if (!window.firebaseDB) {
+        console.error("❌ Firestore no está disponible todavía.");
+        return;
+    }
+
+    window.firebaseDB.collection("partidas").doc(userId).get()
+        .then((doc) => {
+            if (doc.exists) {
+                console.log("✅ Partida encontrada en la base de datos:", doc.data());
+
+                const gameScene = game.scene.getScene("GameScene");
+
+                if (!gameScene) {
+                    console.error("❌ No se encontró la escena del juego.");
+                    return;
+                }
+
+                const datos = doc.data();
+
+                // 🔹 Cargar los datos en el juego
+                gameScene.player.setPosition(datos.posX * gameScene.tileSize, datos.posY * gameScene.tileSize);
+                gameScene.carbonCount = datos.inventario.carbon || 0;
+                gameScene.cobreCount = datos.inventario.cobre || 0;
+                gameScene.hierroCount = datos.inventario.hierro || 0;
+                gameScene.plataCount = datos.inventario.plata || 0;
+                gameScene.oroCount = datos.inventario.oro || 0;
+                gameScene.rubiCount = datos.inventario.rubi || 0;
+                gameScene.esmeraldaCount = datos.inventario.esmeralda || 0;
+                gameScene.diamanteCount = datos.inventario.diamante || 0;
+                gameScene.monedas = datos.monedas || 0;
+                gameScene.picoActual = datos.picoTipo || "pico_madera";
+                gameScene.durabilidadPico = datos.picoDurabilidad || 100;
+                gameScene.health = datos.vida || 100;
+                gameScene.cantidadEscaleras = datos.escaleras || 0;
+
+                // 🔹 Actualizar la UI
+                gameScene.monedaTexto.setText(gameScene.monedas);
+                gameScene.contadorEscaleras.setText(gameScene.cantidadEscaleras);
+                gameScene.healthBar.clear()
+                    .fillStyle(0x00ff00, 1)
+                    .fillRoundedRect(52, 42, (gameScene.health / 100) * 200, 12, 6);
+
+                console.log("🔹 Partida cargada con éxito.");
+            } else {
+                console.log("ℹ No hay partida guardada. Se iniciará una nueva.");
+            }
+        })
+        .catch((error) => {
+            console.error("❌ Error al cargar partida:", error);
+        });
+}
+
 class GameScene extends Phaser.Scene {
     constructor() {
         super('GameScene');
@@ -222,6 +280,17 @@ class GameScene extends Phaser.Scene {
     }
 
     create() {
+        console.log("🎮 Iniciando GameScene...");               
+
+        const user = window.firebaseAuth.currentUser;
+
+        if (user) {
+            console.log("🔹 Usuario autenticado, cargando partida...");
+            //cargarPartida(user.uid);
+        } else {
+            console.log("ℹ Usuario no autenticado, iniciando nueva partida.");
+        }
+
         // Detectar la tecla ESC para alternar entre pausa y juego
         this.input.keyboard.on("keydown-ESC", () => {
             if (this.scene.isActive("PauseMenu")) {
@@ -513,8 +582,6 @@ class GameScene extends Phaser.Scene {
 
         // ✅ Asegurar que el jugador comienza en la posición correcta (8,2)
         this.player.setPosition(this.tileSize * 8, this.tileSize * 2);
-        console.log(`📍 Posición inicial corregida: X=${this.player.x}, Y=${this.player.y}`);
-
         const spawnX = Math.floor(this.player.x / this.tileSize);
         const spawnY = Math.floor(this.player.y / this.tileSize) + 1; // Justo debajo del jugador
 
@@ -1495,11 +1562,6 @@ class GameScene extends Phaser.Scene {
             return; // No permitir nuevos movimientos mientras el personaje está en movimiento
         }
 
-        // ✅ Asegurar que el jugador puede moverse en las filas 2, 3 y 4 sin problemas
-        if (playerGridY >= 2 && playerGridY <= 4) {
-            console.log("🟢 Permitiendo movimiento en la superficie sin restricciones.");
-        }
-
         if (this.cursors.left.isDown) {
             if (this.player.x > 0) {
                 if (this.spaceKey.isDown) {
@@ -1610,11 +1672,6 @@ class GameScene extends Phaser.Scene {
 
         const targetBlock = this.grid[gridX][gridY].type;
 
-        // ✅ Permitir movimiento en filas 2, 3 y 4
-        if (gridY >= 2 && gridY <= 4) {
-            console.log(`🟢 Moviéndome en fila ${gridY} sin restricciones.`);
-        }
-
         // 🚨 Verificar si el destino es un bloque de hierro antes de mover
         if (targetBlock === 'iron') {
             console.log("⛔ No puedes moverte sobre bloques de hierro.");
@@ -1666,11 +1723,6 @@ class GameScene extends Phaser.Scene {
         }
 
         const targetBlock = this.grid[gridX][gridY].type;
-
-        // ✅ Permitir movimiento en filas 2, 3 y 4 al usar escaleras
-        if (gridY >= 2 && gridY <= 4) {
-            console.log(`🟢 Moviéndome en fila ${gridY} con escalera.`);
-        }
 
         // 🚨 Verificar si el destino es un bloque de hierro antes de mover
         if (targetBlock === 'iron') {
@@ -1736,6 +1788,10 @@ class GameScene extends Phaser.Scene {
 
         const block = (this.grid[gridX] && this.grid[gridX][gridY]) ? this.grid[gridX][gridY] : null;
         if (block) {
+            if (block.type === 'empty') {
+                return;
+            }
+
             // 🚨 Verificar si el bloque es de hierro antes de permitir el minado
             if (block.type === 'iron') {
                 console.log("⛏️ No puedes minar este bloque de hierro.");
