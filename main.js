@@ -5,56 +5,82 @@ class MenuScene extends Phaser.Scene {
 
     preload() {
         this.load.image('fondoMenu', 'assets/fondoMenu.png'); // Reemplaza 'fondoMenu.png' con el nombre del archivo que subiste
+        this.load.image('google_logo', 'assets/google_logo.png'); // Asegúrate de cargar 'google_logo.png' en preload()
     }
 
     create() {
-        // Agregar la imagen de fondo centrada y ajustada al tamaño de la pantalla
-        this.add.image(
-            this.cameras.main.width / 2, // Centrar en el eje X
-            this.cameras.main.height / 2, // Centrar en el eje Y
-            'fondoMenu' // Nombre de la imagen cargada en preload
-        )
-            .setOrigin(0.5) // Centrar la imagen en su punto medio
-            .setDisplaySize(this.cameras.main.width, this.cameras.main.height); // Ajustar al tamaño de la pantalla
+        // Agregar el fondo del menú
+        this.add.image(this.cameras.main.width / 2, this.cameras.main.height / 2, 'fondoMenu')
+            .setOrigin(0.5)
+            .setDisplaySize(this.cameras.main.width, this.cameras.main.height);
 
-        // Centrar el título con el nuevo nombre
-        this.add.text(
-            this.cameras.main.width / 2, // Centrar en el eje X
-            this.cameras.main.height / 3 + 20, // Mantener la misma altura
-            'Miner Madness', // El nuevo título del juego
-            { fontSize: '48px', fill: '#000', fontStyle: 'bold' } // Color crema y estilo en negrita
-        ).setOrigin(0.5);
+        this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 3 + 20, 'Miner Madness',
+            { fontSize: '48px', fill: '#000', fontStyle: 'bold' })
+            .setOrigin(0.5);
 
-        // Centrar el botón con estilo negro y marrón al pasar el cursor
-        const boton = this.add.text(
-            this.cameras.main.width / 2 - 15, // Mover hacia la izquierda
-            this.cameras.main.height / 2 + 30, // Mantener la misma altura
-            'JUGAR', // Texto cambiado a "JUGAR"
-            { fontSize: '32px', fill: '#000', fontStyle: 'bold' } // Botón en negro y estilo en negrita
-        )
+        this.playButton = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2 + 30, 'JUGAR',
+            { fontSize: '32px', fill: '#000', fontStyle: 'bold' })
             .setOrigin(0.5)
             .setInteractive()
-            .on('pointerdown', () => this.scene.start('GameScene')) // Cambiar a la escena del juego
-            .on('pointerover', () => boton.setStyle({ fill: '#8b4513' })) // Cambiar a marrón al pasar el mouse
-            .on('pointerout', () => boton.setStyle({ fill: '#000' })); // Restaurar negro al quitar el cursor
+            .on('pointerdown', () => this.scene.start('GameScene'))
+            .on('pointerover', () => this.playButton.setStyle({ fill: '#8b4513' }))
+            .on('pointerout', () => this.playButton.setStyle({ fill: '#000' }));
 
-        // Crear botón de login en el menú principal
-        const loginButton = this.add.text(
-            this.cameras.main.width / 2,  // Centrar en X
-            this.cameras.main.height / 2 + 80, // Colocarlo debajo del botón de JUGAR
-            "Iniciar sesión con Google",
-            { fontSize: "24px", fill: "#ffffff", backgroundColor: "#4285F4", padding: 10 }
-        )
+        // 🔹 Crear el botón de Google en la esquina superior derecha
+        this.googleButtonContainer = this.add.container(this.cameras.main.width - 150, 50).setSize(200, 50);
+
+        const buttonBackground = this.add.rectangle(0, 0, 200, 50, 0xffffff)
             .setOrigin(0.5)
-            .setInteractive()
-            .on("pointerdown", () => {
-                loginWithGoogle();
-            });
+            .setStrokeStyle(2, 0xdddddd);
+
+        const googleLogo = this.add.image(-70, 0, 'google_logo')
+            .setDisplaySize(30, 30)
+            .setOrigin(0.5);
+
+        this.loginText = this.add.text(20, 0, "Iniciar sesión", {
+            fontSize: "20px",
+            fill: "#000",
+            fontFamily: "Arial",
+            fontStyle: "bold"
+        }).setOrigin(0.5);
+
+        this.googleButtonContainer.add([buttonBackground, googleLogo, this.loginText]);
+
+        // 🔹 Hacer que el fondo del botón sea interactivo
+        buttonBackground.setInteractive({ useHandCursor: true });
+
+        // 🔹 Detectar cambios en la autenticación
+        window.firebaseAuth.onAuthStateChanged((user) => {
+            console.log("🔒 Estado de autenticación cambiado:", user ? "Usuario autenticado" : "Usuario NO autenticado");
+
+            if (user) {
+                // ✅ Usuario autenticado: Cambiar a "Cerrar sesión"
+                this.loginText.setText("Cerrar sesión");
+                buttonBackground.off("pointerdown");
+                buttonBackground.on("pointerdown", () => logoutUser());
+                // ✅ Usuario SÍ autenticado: Cambiar a "JUGAR"
+                this.playButton.setText("JUGAR");
+                this.playButton.off("pointerdown");
+                this.playButton.on("pointerdown", () => this.scene.start('GameScene'));
+            } else {
+                // ❌ No autenticado: Cambiar a "Iniciar sesión"
+                this.loginText.setText("Iniciar sesión");
+                buttonBackground.off("pointerdown");
+                buttonBackground.on("pointerdown", () => loginWithGoogle());
+                // ❌ Usuario NO autenticado: Mostrar "Jugar como invitado"
+                this.playButton.setText("Jugar como invitado");
+                this.playButton.off("pointerdown");
+                this.playButton.on("pointerdown", () => {
+                    alert("Estás jugando como invitado. Tu progreso NO se guardará.");
+                    this.scene.start('GameScene');
+                });
+            }
+        });
 
         // Añadir el cartel con tu nombre en color crema
         this.add.text(
             this.cameras.main.width / 2, // Centrado en X
-            this.cameras.main.height / 2 + 120, // Posicionar debajo del botón
+            this.cameras.main.height / 2 + 80, // Posicionar debajo del botón
             'Hecho por: Nicolás Rodríguez Ferrándiz',
             { fontSize: '24px', fill: '#f5deb3', fontStyle: 'bold' } // Color crema y estilo en negrita
         ).setOrigin(0.5);
@@ -74,10 +100,19 @@ function loginWithGoogle() {
         .then((result) => {
             const user = result.user;
             console.log("✅ Usuario autenticado:", user.displayName);
-            alert(`Bienvenido, ${user.displayName}!`);
         })
         .catch((error) => {
             console.error("❌ Error en autenticación:", error.message);
+        });
+}
+
+function logoutUser() {
+    window.firebaseAuth.signOut()
+        .then(() => {
+            console.log("✅ Usuario ha cerrado sesión.");
+        })
+        .catch((error) => {
+            console.error("❌ Error al cerrar sesión:", error.message);
         });
 }
 
