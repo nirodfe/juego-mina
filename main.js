@@ -116,6 +116,62 @@ function logoutUser() {
         });
 }
 
+function guardarPartida() {
+    if (!window.firebaseDB) {
+        console.error("❌ Firestore aún no está listo. Reintentando en 500ms...");
+        setTimeout(guardarPartida, 500); // Reintentar después de 500ms
+        return;
+    }
+
+    const user = window.firebaseAuth.currentUser;
+
+    if (!user) {
+        alert("❌ Debes iniciar sesión para guardar tu partida.");
+        return;
+    }
+
+    // 🔹 Obtener la escena del juego
+    const gameScene = game.scene.scenes.find(scene => scene.scene.key === "GameScene");
+
+    if (!gameScene) {
+        console.error("❌ No se encontró la escena del juego.");
+        return;
+    }
+
+    // 🔹 Obtener los datos reales del juego
+    const datosPartida = {
+        posX: Math.floor(gameScene.player.x / gameScene.tileSize),
+        posY: Math.floor(gameScene.player.y / gameScene.tileSize),
+        inventario: {
+            carbon: gameScene.carbonCount,
+            cobre: gameScene.cobreCount,
+            hierro: gameScene.hierroCount,
+            plata: gameScene.plataCount,
+            oro: gameScene.oroCount,
+            rubi: gameScene.rubiCount,
+            esmeralda: gameScene.esmeraldaCount,
+            diamante: gameScene.diamanteCount
+        },
+        monedas: gameScene.monedas,
+        picoTipo: gameScene.picoActual,
+        picoDurabilidad: gameScene.durabilidadPico,
+        vida: gameScene.health,
+        escaleras: gameScene.cantidadEscaleras
+    };
+
+    console.log("📌 Datos de la partida a guardar:", datosPartida);
+
+    // 🔹 Guardar en Firestore en la colección "partidas"
+    window.firebaseDB.collection("partidas").doc(user.uid).set(datosPartida)
+        .then(() => {
+            console.log("✅ Partida guardada correctamente.");
+            alert("✅ Tu partida ha sido guardada en la nube.");
+        })
+        .catch((error) => {
+            console.error("❌ Error al guardar partida:", error);
+        });
+}
+
 class GameScene extends Phaser.Scene {
     constructor() {
         super('GameScene');
@@ -166,6 +222,19 @@ class GameScene extends Phaser.Scene {
     }
 
     create() {
+        // Detectar la tecla ESC para alternar entre pausa y juego
+        this.input.keyboard.on("keydown-ESC", () => {
+            if (this.scene.isActive("PauseMenu")) {
+                // 🔹 Si el menú de pausa ya está abierto, cerrarlo y reanudar el juego
+                this.scene.stop("PauseMenu");
+                this.scene.resume();
+            } else {
+                // 🔹 Si el menú de pausa NO está abierto, pausamos el juego y lo abrimos
+                this.scene.pause();
+                this.scene.launch("PauseMenu");
+            }
+        });
+
         this.cursors = this.input.keyboard.createCursorKeys();
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
@@ -1743,6 +1812,7 @@ class GameScene extends Phaser.Scene {
         }
     }
 
+
     verificarFinDelJuego() {
         if (this.juegoTerminado) return; // 🔹 Evitar que se ejecute más de una vez
 
@@ -1841,6 +1911,59 @@ class GameScene extends Phaser.Scene {
     }
 }
 
+class PauseMenu extends Phaser.Scene {
+    constructor() {
+        super({ key: 'PauseMenu' });
+    }
+
+    create() {
+        // Fondo semi-transparente
+        this.add.rectangle(this.cameras.main.width / 2, this.cameras.main.height / 2,
+            this.cameras.main.width * 0.6, this.cameras.main.height * 0.4,
+            0x000000, 0.8).setOrigin(0.5);
+
+        // Texto de "PAUSA"
+        this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2 - 50,
+            "PAUSA", { fontSize: "32px", fill: "#fff", fontStyle: "bold" })
+            .setOrigin(0.5);
+
+        // Botón de salir al menú principal
+        this.exitButton = this.add.text(
+            this.cameras.main.width / 2, this.cameras.main.height / 2 + 50,
+            "Salir al Menú",
+            { fontSize: "24px", fill: "#fff", backgroundColor: "#dc3545", padding: 10 }
+        )
+            .setOrigin(0.5)
+            .setInteractive()
+            .on("pointerdown", () => {
+                this.scene.stop('GameScene'); // Detener la partida
+                this.scene.stop('PauseMenu'); // Cerrar el menú de pausa
+                this.scene.start('MenuScene'); // Volver al menú principal
+            });
+
+        // 🔹 Mostrar u ocultar el botón de guardado según el estado del usuario
+        if (window.firebaseAuth.currentUser) {
+            // Botón de guardar partida (si el jugador está logueado)
+            this.saveButton = this.add.text(
+                this.cameras.main.width / 2, this.cameras.main.height / 2,
+                "Guardar Partida",
+                { fontSize: "24px", fill: "#fff", backgroundColor: "#28a745", padding: 10 }
+            )
+                .setOrigin(0.5)
+                .setInteractive()
+                .on("pointerdown", () => {
+                    guardarPartida();
+                });
+        }
+
+        // 🔹 Detectar tecla ESC para cerrar el menú de pausa y reanudar el juego
+        this.input.keyboard.on("keydown-ESC", () => {
+            this.scene.stop();  // Cerrar el menú de pausa
+            this.scene.resume("GameScene"); // Reanudar el juego
+        });
+    }
+}
+
 const config = {
     type: Phaser.AUTO,
     width: window.innerWidth, // Ancho dinámico según el tamaño de la ventana
@@ -1852,7 +1975,7 @@ const config = {
             debug: false
         }
     },
-    scene: [MenuScene, GameScene] // Incluir ambas escenas
+    scene: [MenuScene, GameScene, PauseMenu] // Incluir ambas escenas
 };
 
 const game = new Phaser.Game(config);

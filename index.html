@@ -27,6 +27,7 @@
             // Inicializar Firebase usando compatibilidad con versiones anteriores
             window.firebaseApp = firebase.initializeApp(firebaseConfig);
             window.firebaseAuth = firebase.auth();
+            window.firebaseDB = firebase.firestore(); // 🔹 Asegurar que Firestore está inicializado correctamente
         });
     </script>
 
