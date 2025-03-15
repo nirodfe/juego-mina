@@ -1,22 +1,56 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Miner Madness</title>
     <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+
+    <!-- Firebase SDK (Usar versión compat en lugar de módulos ES6) -->
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Your web app's Firebase configuration
+            const firebaseConfig = {
+                apiKey: "AIzaSyCnRH9SeI0fm8t35WGEhUzsB2LVJV8nEzo",
+                authDomain: "miner-madness.firebaseapp.com",
+                projectId: "miner-madness",
+                storageBucket: "miner-madness.firebasestorage.app",
+                messagingSenderId: "1851347599",
+                appId: "1:1851347599:web:0931da01266da1d54e56fa"
+            };
+
+            // Inicializar Firebase usando compatibilidad con versiones anteriores
+            window.firebaseApp = firebase.initializeApp(firebaseConfig);
+            window.firebaseAuth = firebase.auth();
+        });
+    </script>
+
+    <!-- Asegurar que Firebase se carga antes de main.js -->
+    <script src="main.js" defer></script>
+
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <style>
         body {
-            margin: 0; /* Sin márgenes alrededor de la página */
-            overflow: hidden; /* Ocultar las barras de scroll */
+            margin: 0;
+            /* Sin márgenes alrededor de la página */
+            overflow: hidden;
+            /* Ocultar las barras de scroll */
         }
+
         canvas {
-            display: block; /* Evitar desplazamientos causados por el lienzo */
+            display: block;
+            /* Evitar desplazamientos causados por el lienzo */
         }
-    </style>    
+    </style>
 </head>
+
 <body>
-    <script src="main.js"></script>
+
 </body>
+
 </html>

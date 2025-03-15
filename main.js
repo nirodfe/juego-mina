@@ -38,14 +38,47 @@ class MenuScene extends Phaser.Scene {
             .on('pointerover', () => boton.setStyle({ fill: '#8b4513' })) // Cambiar a marrón al pasar el mouse
             .on('pointerout', () => boton.setStyle({ fill: '#000' })); // Restaurar negro al quitar el cursor
 
+        // Crear botón de login en el menú principal
+        const loginButton = this.add.text(
+            this.cameras.main.width / 2,  // Centrar en X
+            this.cameras.main.height / 2 + 80, // Colocarlo debajo del botón de JUGAR
+            "Iniciar sesión con Google",
+            { fontSize: "24px", fill: "#ffffff", backgroundColor: "#4285F4", padding: 10 }
+        )
+            .setOrigin(0.5)
+            .setInteractive()
+            .on("pointerdown", () => {
+                loginWithGoogle();
+            });
+
         // Añadir el cartel con tu nombre en color crema
         this.add.text(
             this.cameras.main.width / 2, // Centrado en X
-            this.cameras.main.height / 2 + 80, // Posicionar debajo del botón
+            this.cameras.main.height / 2 + 120, // Posicionar debajo del botón
             'Hecho por: Nicolás Rodríguez Ferrándiz',
             { fontSize: '24px', fill: '#f5deb3', fontStyle: 'bold' } // Color crema y estilo en negrita
         ).setOrigin(0.5);
     }
+}
+
+function loginWithGoogle() {
+    if (!window.firebaseAuth) {
+        console.error("❌ Firebase aún no está listo. Esperando...");
+        setTimeout(loginWithGoogle, 500); // Reintentar en 500ms
+        return;
+    }
+
+    const provider = new window.firebase.auth.GoogleAuthProvider();
+
+    window.firebaseAuth.signInWithPopup(provider)
+        .then((result) => {
+            const user = result.user;
+            console.log("✅ Usuario autenticado:", user.displayName);
+            alert(`Bienvenido, ${user.displayName}!`);
+        })
+        .catch((error) => {
+            console.error("❌ Error en autenticación:", error.message);
+        });
 }
 
 class GameScene extends Phaser.Scene {
