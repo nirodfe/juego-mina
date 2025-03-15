@@ -280,7 +280,7 @@ class GameScene extends Phaser.Scene {
     }
 
     create() {
-        console.log("🎮 Iniciando GameScene...");               
+        console.log("🎮 Iniciando GameScene...");
 
         const user = window.firebaseAuth.currentUser;
 
@@ -578,8 +578,7 @@ class GameScene extends Phaser.Scene {
         this.player.displayWidth = this.tileSize; // Ajustar ancho al tamaño de la cuadrícula
         this.player.displayHeight = this.tileSize; // Ajustar alto al tamaño de la cuadrícula
         this.player.setCollideWorldBounds(true);
-        this.physics.add.collider(this.player, this.bloquesHierro);
-
+        
         // ✅ Asegurar que el jugador comienza en la posición correcta (8,2)
         this.player.setPosition(this.tileSize * 8, this.tileSize * 2);
         const spawnX = Math.floor(this.player.x / this.tileSize);
@@ -943,9 +942,7 @@ class GameScene extends Phaser.Scene {
         // Crear el contenedor del menú del arsenal
         this.menuArsenalContainer = this.add.container(0, 0).setVisible(false).setDepth(20);
 
-        // Crear un grupo de colisión para los bloques de hierro
-        this.bloquesHierro = this.physics.add.staticGroup();
-
+        // Crear los bloques de hierro
         const tiendas = [
             { x: [3, 4, 5], y: 2 }, // Tienda de vender (bloques en X=3, 4 y 5)
             { x: [11, 12, 13], y: 2 } // Tienda de comprar (bloques en X=11, 12 y 13)
@@ -955,13 +952,13 @@ class GameScene extends Phaser.Scene {
             tienda.x.forEach(tiendaX => { // Iterar sobre cada X en la tienda
                 const tiendaY = tienda.y + 1; // Justo debajo de la tienda
 
-                // Crear bloque de hierro con cuerpo estático para colisiones
-                const bloque = this.bloquesHierro.create(tiendaX * this.tileSize, tiendaY * this.tileSize, 'bloque_hierro')
+                // 🔹 Crear bloque de hierro como un sprite en lugar de un objeto de Physics
+                const bloque = this.add.image(tiendaX * this.tileSize, tiendaY * this.tileSize, 'bloque_hierro')
                     .setOrigin(0)
                     .setDisplaySize(this.tileSize, this.tileSize)
-                    .refreshBody(); // Refrescar el cuerpo de colisión
+                    .setDepth(1); // Mantenerlo en el fondo
 
-                // Guardar el bloque en la grid para evitar que sea minado
+                // 🔹 Guardar el bloque en la grid
                 this.grid[tiendaX][tiendaY] = { type: 'iron', sprite: bloque };
             });
         });
