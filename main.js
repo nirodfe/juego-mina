@@ -236,7 +236,6 @@ function cargarPartida(userId) {
                 gameScene.cantidadEscaleras = datos.escaleras || 0;
 
                 // 🔹 Actualizar la UI
-                gameScene.monedaTexto.setText(gameScene.monedas);
                 gameScene.contadorEscaleras.setText(gameScene.cantidadEscaleras);
                 gameScene.healthBar.clear()
                     .fillStyle(0x00ff00, 1)
@@ -594,7 +593,6 @@ class GameScene extends Phaser.Scene {
                         this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
-
                         // Dibujar capa de carbón encima
                         this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'carbon')
                             .setOrigin(0)
@@ -922,11 +920,6 @@ class GameScene extends Phaser.Scene {
 
         // Evento de clic en el botón de la mochila
         mochilaButton.on('pointerdown', () => {
-            // Si el menú de la refineria o arsenal está abierto, ignoramos el clic
-            if (this.menuRefineriaContainer.visible || this.menuArsenalContainer.visible) {
-                return;
-            }
-
             // Si el menú de la mochila ya está abierto, cerrarlo
             if (this.menuContainer.visible) {
                 this.menuContainer.setVisible(false);
@@ -1000,9 +993,6 @@ class GameScene extends Phaser.Scene {
         // Crear el contenedor del menú de la refineria
         this.menuRefineriaContainer = this.add.container(0, 0).setVisible(false).setDepth(20);
 
-        // Crear el contenedor del menú del arsenal
-        this.menuArsenalContainer = this.add.container(0, 0).setVisible(false).setDepth(20);
-
         // Crear los bloques de hierro
         const tiendas = [
             { x: [3, 4, 5], y: 2 }, // Tienda de vender (bloques en X=3, 4 y 5)
@@ -1023,29 +1013,6 @@ class GameScene extends Phaser.Scene {
                 this.grid[tiendaX][tiendaY] = { type: 'iron', sprite: bloque };
             });
         });
-
-        // Inicializar el contador de monedas
-        this.monedaCount = 0;
-
-        // Crear el icono de moneda en la esquina superior derecha
-        this.monedaIcono = this.add.image(this.cameras.main.width - 50, 60, "icono_moneda")
-            .setOrigin(1, 0.5)
-            .setDisplaySize(35, 35) // Ajustar tamaño del icono
-            .setScrollFactor(0) // Fijarlo a la pantalla
-            .setDepth(100)
-            .setVisible(false); // Inicialmente oculto
-
-        // Crear el texto de monedas al lado del icono
-        this.monedaTexto = this.add.text(this.cameras.main.width - 100, 62, "0", {
-            fontSize: "32px",
-            fill: "#000000",
-            fontStyle: "bold",
-            fontFamily: "Arial"
-        })
-            .setOrigin(1, 0.5)
-            .setDepth(100)
-            .setScrollFactor(0)
-            .setVisible(false); // Inicialmente oculto
     }
 
     updateHealthBar() {
@@ -1357,19 +1324,6 @@ class GameScene extends Phaser.Scene {
             // Permitir cerrar la refineria con la barra espaciadora
             if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
                 this.cerrarMenuRefineria();
-            }
-
-            return; // Evitar que se ejecute cualquier otro código de movimiento
-        }
-
-        // Si el menú del arsenal está abierto, detener el personaje pero permitir cerrar el menú
-        if (this.menuArsenalContainer.visible) {
-            this.player.setVelocity(0, 0);
-            this.moving = false;
-
-            // Permitir cerrar la refineria con la barra espaciadora
-            if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-                this.cerrarMenuArsenal();
             }
 
             return; // Evitar que se ejecute cualquier otro código de movimiento
