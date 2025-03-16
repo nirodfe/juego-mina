@@ -76,8 +76,11 @@ class MenuScene extends Phaser.Scene {
                 this.playButton.setText("Jugar como invitado");
                 this.playButton.off("pointerdown");
                 this.playButton.on("pointerdown", () => {
-                    alert("Estás jugando como invitado. Tu progreso NO se guardará.");
-                    this.scene.start('GameScene');
+                    const confirmPlay = window.confirm("Estás jugando como invitado. Tu progreso NO se guardará. ¿Quieres continuar?");
+
+                    if (confirmPlay) {
+                        this.scene.start('GameScene');
+                    }
                 });
             }
         });
@@ -170,11 +173,31 @@ function guardarPartida() {
     window.firebaseDB.collection("partidas").doc(user.uid).set(datosPartida)
         .then(() => {
             console.log("✅ Partida guardada correctamente.");
-            alert("✅ Tu partida ha sido guardada en la nube.");
+            mostrarNotificacion("✅ Tu partida ha sido guardada en la nube.");
         })
         .catch((error) => {
             console.error("❌ Error al guardar partida:", error);
         });
+}
+
+function mostrarNotificacion(mensaje) {
+    const notification = document.createElement("div");
+    notification.innerText = mensaje;
+    notification.style.position = "fixed";
+    notification.style.top = "20px"; // 🔹 Aparece en la parte superior
+    notification.style.left = "50%"; // 🔹 Centrar horizontalmente
+    notification.style.transform = "translateX(-50%)"; // 🔹 Ajustar al centro
+    notification.style.background = "rgba(0, 0, 0, 0.8)";
+    notification.style.color = "white";
+    notification.style.padding = "10px 20px";
+    notification.style.borderRadius = "5px";
+    notification.style.fontSize = "16px";
+    notification.style.zIndex = "1000";
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.remove();
+    }, 3000); // 🔹 Desaparece después de 3 segundos
 }
 
 function cargarPartida(userId) {
@@ -185,10 +208,9 @@ function cargarPartida(userId) {
 
     window.firebaseDB.collection("partidas").doc(userId).get()
         .then((doc) => {
+            const gameScene = game.scene.getScene("GameScene");
             if (doc.exists) {
                 console.log("✅ Partida encontrada en la base de datos:", doc.data());
-
-                const gameScene = game.scene.getScene("GameScene");
 
                 if (!gameScene) {
                     console.error("❌ No se encontró la escena del juego.");
@@ -224,9 +246,17 @@ function cargarPartida(userId) {
             } else {
                 console.log("ℹ No hay partida guardada. Se iniciará una nueva.");
             }
+            // 🔹 Ocultar el panel de carga cuando los datos estén listos
+            if (gameScene.loadingContainer) {
+                gameScene.loadingContainer.setVisible(false);
+            }
         })
         .catch((error) => {
             console.error("❌ Error al cargar partida:", error);
+            // 🔹 Ocultar el panel de carga cuando los datos estén listos
+            if (gameScene.loadingContainer) {
+                gameScene.loadingContainer.setVisible(false);
+            }
         });
 }
 
@@ -282,10 +312,52 @@ class GameScene extends Phaser.Scene {
     create() {
         console.log("🎮 Iniciando GameScene...");
 
+        this.events.on('shutdown', () => {
+            console.log("🚪 GameScene cerrada. Deteniendo música...");
+
+            if (this.sounds) {
+                this.sounds.forEach(sound => {
+                    if (sound.isPlaying) {
+                        sound.stop();
+                    }
+                });
+            }
+        });
+
+        // 🔹 Crear un contenedor para el panel de carga
+        this.loadingContainer = this.add.container(
+            this.cameras.main.scrollX + this.cameras.main.width / 2,
+            this.cameras.main.scrollY + this.cameras.main.height / 2
+        ).setVisible(false);
+
+        // 🔹 Crear el fondo negro dentro del contenedor
+        const background = this.add.rectangle(
+            0, 0, // Posición relativa dentro del container
+            this.cameras.main.width, // Ancho igual al de la cámara
+            this.cameras.main.height, // Alto igual al de la cámara
+            0x000000, // Color negro
+            1 // Opacidad 100%
+        ).setOrigin(0.5);
+
+        // 🔹 Crear el texto de "Cargando partida..."
+        const loadingText = this.add.text(0, 0, "Cargando partida...", {
+            fontSize: "24px",
+            fill: "#ffffff",
+            fontFamily: "Arial",
+            fontStyle: "bold"
+        }).setOrigin(0.5);
+
+        // 🔹 Añadir el fondo negro y el texto al contenedor
+        this.loadingContainer.add([background, loadingText]);
+
+        // 🔹 Asegurar que el panel esté al frente de todo
+        this.loadingContainer.setDepth(1000);
+
         const user = window.firebaseAuth.currentUser;
 
         if (user) {
             console.log("🔹 Usuario autenticado, cargando partida...");
+            this.loadingContainer.setVisible(true);
             cargarPartida(user.uid);
         } else {
             console.log("ℹ Usuario no autenticado, iniciando nueva partida.");
@@ -578,7 +650,7 @@ class GameScene extends Phaser.Scene {
         this.player.displayWidth = this.tileSize; // Ajustar ancho al tamaño de la cuadrícula
         this.player.displayHeight = this.tileSize; // Ajustar alto al tamaño de la cuadrícula
         this.player.setCollideWorldBounds(true);
-        
+
         // ✅ Asegurar que el jugador comienza en la posición correcta (8,2)
         this.player.setPosition(this.tileSize * 8, this.tileSize * 2);
         const spawnX = Math.floor(this.player.x / this.tileSize);
@@ -1446,6 +1518,13 @@ class GameScene extends Phaser.Scene {
     }
 
     update() {
+        if (this.loadingContainer) {
+            this.loadingContainer.setPosition(
+                this.cameras.main.scrollX + this.cameras.main.width / 2,
+                this.cameras.main.scrollY + this.cameras.main.height / 2
+            );
+        }
+
         // Si el menú de la refineria está abierto, detener el personaje pero permitir cerrar el menú
         if (this.menuRefineriaContainer.visible) {
             this.player.setVelocity(0, 0);
@@ -1643,11 +1722,18 @@ class GameScene extends Phaser.Scene {
     }
 
     playNextSound() {
+        let nextIndex;
+
+        // 🔹 Elegir un índice aleatorio distinto al actual
+        do {
+            nextIndex = Phaser.Math.Between(0, this.sounds.length - 1);
+        } while (nextIndex === this.currentSoundIndex);
+
+        this.currentSoundIndex = nextIndex;
         const currentSound = this.sounds[this.currentSoundIndex];
 
         currentSound.play();
         currentSound.once('complete', () => {
-            this.currentSoundIndex = (this.currentSoundIndex + 1) % this.sounds.length;
             this.playNextSound(); // Reproduce el siguiente sonido
         });
     }
