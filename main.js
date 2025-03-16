@@ -990,9 +990,6 @@ class GameScene extends Phaser.Scene {
             .setDepth(4)
             .setDisplaySize(this.tileSize * 3, this.tileSize * 3); // Ajusta el tamaño según necesites
 
-        // Crear el contenedor del menú de la refineria
-        this.menuRefineriaContainer = this.add.container(0, 0).setVisible(false).setDepth(20);
-
         // Crear los bloques de hierro
         const tiendas = [
             { x: [3, 4, 5], y: 2 }, // Tienda de vender (bloques en X=3, 4 y 5)
@@ -1095,159 +1092,11 @@ class GameScene extends Phaser.Scene {
     }
 
     abrirMenuRefineria() {
-        if (this.menuRefineriaContainer.visible) return; // Si ya está abierto, no hacer nada
+        console.log("🟢 Abriendo RefineriaMenuScene...");
 
-        console.log("🟢 Abriendo menú de la refineria...");
-
-        // Mostrar el contador de monedas al abrir la refineria
-        this.monedaIcono.setVisible(true);
-        this.monedaTexto.setVisible(true);
-
-        const borde = 38; // 1 cm en píxeles
-        const menuAncho = this.cameras.main.width - 2 * borde;
-        const menuAlto = this.cameras.main.height - 2 * borde;
-
-        // Crear el borde marrón
-        if (!this.menuBorde) {
-            this.menuBorde = this.add.rectangle(0, 0, menuAncho, menuAlto, 0xFFF0C9, 1) // Marrón oscuro
-                .setOrigin(0.5)
-                .setDepth(20);
-            this.menuRefineriaContainer.add(this.menuBorde);
-        } else {
-            console.log("🟢 Redimensionando borde...");
-            this.menuBorde.setSize(menuAncho, menuAlto);
-        }
-
-        // Agregar el título "Refinería del minero"
-        if (!this.menuTitulo) {
-            this.menuTitulo = this.add.text(0, -menuAlto / 2 + 40, "Refinería del minero", {
-                fontSize: "48px",
-                fill: "#000000", // Negro
-                fontStyle: "bold",
-                fontFamily: "Arial"
-            })
-                .setOrigin(0.5)
-                .setDepth(22);
-            this.menuRefineriaContainer.add(this.menuTitulo);
-        }
-
-        // Centrar el menú respecto a la cámara y el mundo
-        this.menuRefineriaContainer.setPosition(
-            this.cameras.main.scrollX + this.cameras.main.width / 2,
-            this.cameras.main.scrollY + this.cameras.main.height / 2
-        );
-
-        // Detener el personaje completamente al abrir la refineria
-        this.player.setVelocity(0, 0); // Para por completo cualquier movimiento
-        this.moving = false; // Reiniciar el estado de movimiento
-
-        // Desactivar las teclas de movimiento, pero mantener la barra espaciadora
-        this.cursors.left.enabled = false;
-        this.cursors.right.enabled = false;
-        this.cursors.up.enabled = false;
-        this.cursors.down.enabled = false;
-
-        // Definir los minerales con sus imágenes y valores
-        const minerales = [
-            { nombre: "carbon", valor: 1 },
-            { nombre: "cobre", valor: 2 },
-            { nombre: "hierro", valor: 5 },
-            { nombre: "plata", valor: 10 },
-            { nombre: "oro", valor: 25 },
-            { nombre: "rubi", valor: 35 },
-            { nombre: "esmeralda", valor: 50 },
-            { nombre: "diamante", valor: 75 }
-        ];
-
-        // Crear contenedor para los botones
-        if (!this.menuVenta) {
-            this.menuVenta = this.add.container(0, 0).setDepth(22).setVisible(true);
-            this.menuRefineriaContainer.add(this.menuVenta);
-
-            const columnas = 4;  // 4 columnas
-            const filas = 2;     // 2 filas
-            const espacioX = menuAncho / columnas; // Espacio horizontal
-            const espacioY = menuAlto / filas;   // Espacio vertical
-
-            for (let i = 0; i < minerales.length; i++) {
-                const columna = i % columnas;
-                const fila = Math.floor(i / columnas);
-
-                const xPos = -menuAncho / 2 + espacioX * columna + espacioX / 2;
-                const yPos = -menuAlto / 2.2 + espacioY * fila + espacioY / 2;
-
-                // Crear botón con el icono del mineral
-                const boton = this.add.image(xPos, yPos, `icono_${minerales[i].nombre}`)
-                    .setOrigin(0.5)
-                    .setDisplaySize(espacioX * 0.55, espacioY * 0.55) // Ajusta al tamaño de la cuadrícula
-                    .setInteractive({ useHandCursor: true });
-
-                // Evento de clic para vender el mineral
-                boton.on('pointerdown', () => {
-                    console.log(`🟢 Vendiendo ${minerales[i].nombre}`);
-                    this.venderMineral(minerales[i].nombre);
-                });
-
-                // Texto con el valor de la moneda (sin "Valor:")
-                const textoNumero = this.add.text(xPos - 2, yPos + 92, `${minerales[i].valor}`, {
-                    fontSize: "24px",
-                    fill: "#000000",
-                    fontStyle: "bold",
-                    fontFamily: "Arial"
-                }).setOrigin(1, 0.5).setDepth(23);
-
-                // Icono de moneda después del número
-                const monedaIcono = this.add.image(xPos + 2, yPos + 90, "icono_moneda") // Usar la moneda que generamos antes
-                    .setOrigin(0, 0.5)
-                    .setDisplaySize(35, 35) // Ajustar tamaño del icono de moneda
-                    .setDepth(23);
-
-                this.menuVenta.add(boton);
-                this.menuVenta.add(textoNumero);
-                this.menuVenta.add(monedaIcono);
-            }
-        }
-
-        this.menuRefineriaContainer.setVisible(true);
-        this.physics.world.pause(); // Pausar el mundo físico
-        this.cameras.main.stopFollow(); // Detener el seguimiento de la cámara
-    }
-
-    // 🔴 Al cerrar el menú, permitir nuevamente el movimiento
-    cerrarMenuRefineria() {
-        if (!this.menuRefineriaContainer.visible) return; // Si ya está cerrado, no hacer nada
-
-        console.log("🔴 Cerrando menú de la refineria...");
-
-        // Ocultar el contador de monedas al cerrar la refineria
-        this.monedaIcono.setVisible(false);
-        this.monedaTexto.setVisible(false);
-
-        this.menuRefineriaContainer.setVisible(false); // Ocultar el menú de la refineria
-        this.physics.world.resume(); // Reanudar el mundo físico
-        this.cameras.main.startFollow(this.player); // Volver a seguir al jugador
-
-        // Asegurar que el personaje no tenga movimiento residual
-        this.player.setVelocity(0, 0);
-        this.moving = false;
-
-        // Reactivar movimiento del personaje
-        this.cursors.left.enabled = true;
-        this.cursors.right.enabled = true;
-        this.cursors.up.enabled = true;
-        this.cursors.down.enabled = true;
-
-        // ✅ Asegurar que el personaje no tenga movimiento residual
-        this.player.setVelocity(0, 0);
-        this.moving = false;
-        this.currentTween = null; // Detener cualquier tween activo
-
-        // ✅ Reiniciar las teclas de movimiento
-        this.cursors.left.isDown = false;
-        this.cursors.right.isDown = false;
-        this.cursors.up.isDown = false;
-        this.cursors.down.isDown = false;
-
+        // 🔹 Pausar GameScene y lanzar la escena de la Refinería
+        this.scene.pause();
+        this.scene.launch('RefineriaMenuScene');
     }
 
     abrirMenuArsenal() {
@@ -1256,45 +1105,6 @@ class GameScene extends Phaser.Scene {
         // 🔹 Pausar GameScene y lanzar la escena del Arsenal
         this.scene.pause();
         this.scene.launch('ArsenalMenuScene');
-    }
-
-    // Función para vender un mineral
-    venderMineral(tipo) {
-        if (this[tipo + "Count"] > 0) { // Verificar que el jugador tiene minerales
-            this[tipo + "Count"]--; // Restar 1 unidad del mineral
-            this.monedas = (this.monedas || 0) + this.obtenerValorMineral(tipo); // Sumar el valor al contador de monedas
-
-            // Asegurar que el contador de monedas sigue visible y actualizado
-            if (this.monedaTexto && this.monedaIcono) {
-                this.monedaTexto.setText(this.monedas.toString()); // Convertir a string para evitar NaN
-                this.monedaTexto.setVisible(true);
-                this.monedaIcono.setVisible(true);
-            }
-
-            // 📌 **Actualizar el texto en la mochila incluso cuando llega a 0**
-            if (this.mineralTextos[tipo]) {
-                this.mineralTextos[tipo].setText(`${tipo.charAt(0).toUpperCase() + tipo.slice(1)}: ${this[tipo + "Count"]}`);
-            }
-
-            console.log(`💰 Vendido: ${tipo}. Ahora tienes ${this[tipo + "Count"]} y ${this.monedas} monedas.`);
-        } else {
-            console.log(`❌ No tienes suficiente ${tipo} para vender.`);
-        }
-    }
-
-    // Función auxiliar para obtener el valor de cada mineral
-    obtenerValorMineral(tipo) {
-        const valores = {
-            carbon: 1,
-            cobre: 2,
-            hierro: 5,
-            plata: 10,
-            oro: 25,
-            rubi: 35,
-            esmeralda: 50,
-            diamante: 75
-        };
-        return valores[tipo] || 0; // Retorna 0 si el mineral no está en la lista
     }
 
     actualizarContadorEscaleras() {
@@ -1314,19 +1124,6 @@ class GameScene extends Phaser.Scene {
                 this.cameras.main.scrollX + this.cameras.main.width / 2,
                 this.cameras.main.scrollY + this.cameras.main.height / 2
             );
-        }
-
-        // Si el menú de la refineria está abierto, detener el personaje pero permitir cerrar el menú
-        if (this.menuRefineriaContainer.visible) {
-            this.player.setVelocity(0, 0);
-            this.moving = false;
-
-            // Permitir cerrar la refineria con la barra espaciadora
-            if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-                this.cerrarMenuRefineria();
-            }
-
-            return; // Evitar que se ejecute cualquier otro código de movimiento
         }
 
         // Obtener la posición actual del jugador en la cuadrícula
@@ -1993,6 +1790,165 @@ class ArsenalMenuScene extends Phaser.Scene {
     }
 }
 
+class RefineriaMenuScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'RefineriaMenuScene' });
+    }
+
+    create() {
+        console.log("🔹 RefineriaMenuScene iniciada...");
+
+        // 🔹 Fondo semitransparente que cubre toda la pantalla
+        const menuBackground = this.add.rectangle(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            this.cameras.main.width,
+            this.cameras.main.height,
+            0x000000,
+            0.8 // Opacidad del fondo
+        ).setOrigin(0.5);
+
+        // 🔹 Dimensiones del menú
+        const borde = 38;
+        const menuAncho = this.cameras.main.width - 2 * borde;
+        const menuAlto = this.cameras.main.height - 2 * borde;
+
+        // 🔹 Crear contenedor del menú
+        this.menuContainer = this.add.container(
+            this.cameras.main.scrollX + this.cameras.main.width / 2,
+            this.cameras.main.scrollY + this.cameras.main.height / 2
+        );
+
+        // 🔹 Borde del menú (marrón oscuro)
+        this.menuBorde = this.add.rectangle(0, 0, menuAncho, menuAlto, 0x5A3825) // Marrón oscuro
+            .setOrigin(0.5)
+            .setDepth(20);
+
+        // 🔹 Fondo del menú (marrón claro)
+        this.menuFondo = this.add.rectangle(0, 0, menuAncho - 10, menuAlto - 10, 0xFFF0C9) // Marrón claro
+            .setOrigin(0.5)
+            .setDepth(21);
+
+        // 🔹 Título del menú
+        this.menuTitulo = this.add.text(
+            0, -menuAlto / 2 + 40,
+            "Refinería del minero",
+            { fontSize: "48px", fill: "#000000", fontFamily: "Arial", fontStyle: "bold" }
+        ).setOrigin(0.5).setDepth(22);
+
+        // 🔹 Agregar elementos al contenedor
+        this.menuContainer.add([this.menuBorde, this.menuFondo, this.menuTitulo]);
+
+        // 🔹 Hacer que el menú siga la cámara
+        this.events.on("update", () => {
+            this.menuContainer.setPosition(
+                this.cameras.main.scrollX + this.cameras.main.width / 2,
+                this.cameras.main.scrollY + this.cameras.main.height / 2
+            );
+        });
+
+        // 🔹 Definir los minerales con sus valores de refinado
+        const minerales = [
+            { nombre: "carbon", imagen: "icono_carbon", valor: 1 },
+            { nombre: "cobre", imagen: "icono_cobre", valor: 2 },
+            { nombre: "hierro", imagen: "icono_hierro", valor: 5 },
+            { nombre: "plata", imagen: "icono_plata", valor: 10 },
+            { nombre: "oro", imagen: "icono_oro", valor: 25 },
+            { nombre: "rubi", imagen: "icono_rubi", valor: 35 },
+            { nombre: "esmeralda", imagen: "icono_esmeralda", valor: 50 },
+            { nombre: "diamante", imagen: "icono_diamante", valor: 75 }
+        ];
+
+        // 🔹 Crear contenedor para los botones de refinado
+        this.menuRefinado = this.add.container(0, 0).setDepth(23);
+        this.menuContainer.add(this.menuRefinado);
+
+        const columnas = 4;  // 4 columnas
+        const filas = 2;     // 2 filas
+        const espacioX = menuAncho / columnas; // Espacio horizontal
+        const espacioY = menuAlto / filas;   // Espacio vertical
+
+        for (let i = 0; i < minerales.length; i++) {
+            const columna = i % columnas;
+            const fila = Math.floor(i / columnas);
+
+            const xPos = -menuAncho / 2 + espacioX * columna + espacioX / 2;
+            const yPos = -menuAlto / 2.2 + espacioY * fila + espacioY / 2;
+
+            // 🔹 Crear botón con el icono del mineral
+            const boton = this.add.image(xPos, yPos, minerales[i].imagen)
+                .setOrigin(0.5)
+                .setDisplaySize(espacioX * 0.55, espacioY * 0.55)
+                .setInteractive({ useHandCursor: true })
+                .on('pointerdown', () => {
+                    this.refinarMineral(minerales[i].nombre, minerales[i].valor);
+                });
+
+            // 🔹 Texto con el valor de refinado
+            const textoNumero = this.add.text(xPos - 2, yPos + 92, `${minerales[i].valor}`, {
+                fontSize: "24px",
+                fill: "#000000",
+                fontStyle: "bold",
+                fontFamily: "Arial"
+            }).setOrigin(1, 0.5).setDepth(24);
+
+            // 🔹 Icono de moneda
+            const monedaIcono = this.add.image(xPos + 2, yPos + 90, "icono_moneda")
+                .setOrigin(0, 0.5)
+                .setDisplaySize(35, 35)
+                .setDepth(24);
+
+            this.menuRefinado.add(boton);
+            this.menuRefinado.add(textoNumero);
+            this.menuRefinado.add(monedaIcono);
+        }
+
+        // 🔹 Obtener la escena del juego para acceder a las monedas actuales
+        const gameScene = this.scene.get('GameScene');
+
+        // 🔹 Contador de monedas
+        this.contadorMonedas = this.add.text(
+            menuAncho / 2 - 100, // Posición a la derecha
+            -menuAlto / 2 + 40, // A la misma altura que el título
+            `${gameScene.monedas}`,
+            { fontSize: "32px", fill: "#000000", fontFamily: "Arial", fontStyle: "bold" }
+        ).setOrigin(1, 0.5).setDepth(22);
+
+        // 🔹 Icono de moneda
+        this.monedaIcono = this.add.image(
+            menuAncho / 2 - 90, // Justo a la derecha del contador
+            -menuAlto / 2 + 40,
+            "icono_moneda"
+        ).setOrigin(0, 0.5).setDisplaySize(35, 35).setDepth(22);
+
+        // 🔹 Agregar los elementos al contenedor del menú
+        this.menuContainer.add([this.contadorMonedas, this.monedaIcono]);
+
+        // 🔹 Detectar tecla ESPACIO para cerrar el menú
+        this.input.keyboard.on("keydown-SPACE", () => {
+            console.log("🚪 Cerrando RefineriaMenuScene...");
+            this.scene.stop();
+            this.scene.resume('GameScene'); // 🔹 Reanudar GameScene al cerrar el menú
+        });
+    }
+
+    refinarMineral(nombre, valor) {
+        const gameScene = this.scene.get('GameScene');
+
+        if (gameScene[nombre + "Count"] > 0) {
+            gameScene[nombre + "Count"]--; // Restar un mineral
+            gameScene.monedas += valor; // Sumar monedas
+
+            console.log(`🟢 Refinaste 1 ${nombre}. Ahora tienes ${gameScene.monedas} monedas.`);
+
+            // 🔹 Actualizar el contador de monedas en el menú
+            this.contadorMonedas.setText(gameScene.monedas.toString());
+        } else {
+            console.log(`❌ No tienes suficiente ${nombre} para refinar.`);
+        }
+    }
+}
+
 class PauseMenu extends Phaser.Scene {
     constructor() {
         super({ key: 'PauseMenu' });
@@ -2057,7 +2013,7 @@ const config = {
             debug: false
         }
     },
-    scene: [MenuScene, GameScene, PauseMenu, ArsenalMenuScene] // Incluir escenas
+    scene: [MenuScene, GameScene, PauseMenu, ArsenalMenuScene, RefineriaMenuScene] // Incluir escenas
 };
 
 const game = new Phaser.Game(config);
