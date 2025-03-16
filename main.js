@@ -750,17 +750,6 @@ class GameScene extends Phaser.Scene {
         // Inicializar monedas
         this.monedas = 0;
 
-        this.monedaTexto = this.add.text(this.cameras.main.width - 100, 62, this.monedas.toString(), {
-            fontSize: "32px",
-            fill: "#000000",
-            fontStyle: "bold",
-            fontFamily: "Arial"
-        })
-            .setOrigin(1, 0.5)
-            .setDepth(100)
-            .setScrollFactor(0)
-            .setVisible(false); // Ocultarlo hasta que se necesite
-
         this.juegoTerminado = false; // 🔹 Controla si ya se ha mostrado la pantalla de finalización
 
         // Crear el menú de la mochila (oculto al principio)
@@ -2051,6 +2040,170 @@ class GameScene extends Phaser.Scene {
     }
 }
 
+class ArsenalMenuScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'ArsenalMenuScene' });
+    }
+
+    create() {
+        console.log("🎯 ArsenalMenuScene iniciada...");
+
+        // 🔹 Fondo semitransparente que cubre toda la pantalla
+        const menuBackground = this.add.rectangle(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            this.cameras.main.width,
+            this.cameras.main.height,
+            0x000000,
+            0.8 // Opacidad del fondo
+        ).setOrigin(0.5);
+
+        // 🔹 Dimensiones del menú
+        const borde = 38; // 1 cm en píxeles
+        const menuAncho = this.cameras.main.width - 2 * borde;
+        const menuAlto = this.cameras.main.height - 2 * borde;
+
+        // 🔹 Crear contenedor del menú
+        this.menuContainer = this.add.container(
+            this.cameras.main.scrollX + this.cameras.main.width / 2,
+            this.cameras.main.scrollY + this.cameras.main.height / 2
+        );
+
+        // 🔹 Borde del menú (marrón oscuro)
+        this.menuBorde = this.add.rectangle(0, 0, menuAncho, menuAlto, 0x5A3825) // Marrón oscuro
+            .setOrigin(0.5)
+            .setDepth(20);
+
+        // 🔹 Fondo del menú (marrón claro)
+        this.menuFondo = this.add.rectangle(0, 0, menuAncho - 10, menuAlto - 10, 0xFFF0C9) // Marrón claro
+            .setOrigin(0.5)
+            .setDepth(21);
+
+        // 🔹 Título del menú
+        this.menuTitulo = this.add.text(
+            0, -menuAlto / 2 + 40, // Posición relativa dentro del menú
+            "Arsenal Minero",
+            { fontSize: "48px", fill: "#000000", fontFamily: "Arial", fontStyle: "bold" }
+        ).setOrigin(0.5).setDepth(22);
+
+        // 🔹 Agregar elementos al contenedor
+        this.menuContainer.add([this.menuBorde, this.menuFondo, this.menuTitulo]);
+
+        // 🔹 Hacer que el menú siga la cámara
+        this.events.on("update", () => {
+            this.menuContainer.setPosition(
+                this.cameras.main.scrollX + this.cameras.main.width / 2,
+                this.cameras.main.scrollY + this.cameras.main.height / 2
+            );
+        });
+
+        // 🔹 Definir las herramientas con sus imágenes y valores
+        const herramientas = [
+            { nombre: "escalera", imagen: "ladder", valor: 2 },
+            { nombre: "pico_madera", imagen: "pico_madera", valor: 5 },
+            { nombre: "pico_piedra", imagen: "pico_piedra", valor: 10 },
+            { nombre: "pico_hierro", imagen: "pico_hierro", valor: 25 },
+            { nombre: "pico_oro", imagen: "pico_oro", valor: 50 }
+        ];
+
+        // 🔹 Crear contenedor para los botones de compra
+        this.menuCompra = this.add.container(0, 0).setDepth(23);
+        this.menuContainer.add(this.menuCompra);
+
+        const columnas = 5;  // 5 columnas
+        const filas = 1;     // 1 fila
+        const espacioX = menuAncho / columnas; // Espacio horizontal
+        const espacioY = menuAlto / filas;   // Espacio vertical
+
+        for (let i = 0; i < herramientas.length; i++) {
+            const columna = i % columnas;
+            const fila = Math.floor(i / columnas);
+
+            const xPos = -menuAncho / 2 + espacioX * columna + espacioX / 2;
+            const yPos = -menuAlto / 2.2 + espacioY * fila + espacioY / 2;
+
+            // 🔹 Crear botón con el icono del ítem
+            const boton = this.add.image(xPos, yPos, herramientas[i].imagen)
+                .setOrigin(0.5)
+                .setDisplaySize(espacioX * 0.55, espacioY / 2 * 0.55) // Ajusta al tamaño de la cuadrícula
+                .setInteractive({ useHandCursor: true })
+                .on('pointerdown', () => {
+                    this.comprarItem(herramientas[i].nombre, herramientas[i].valor);
+                });
+
+            // 🔹 Texto con el precio del ítem
+            const textoNumero = this.add.text(xPos - 2, yPos + 92 + 25, `${herramientas[i].valor}`, {
+                fontSize: "24px",
+                fill: "#000000",
+                fontStyle: "bold",
+                fontFamily: "Arial"
+            }).setOrigin(1, 0.5).setDepth(24);
+
+            // 🔹 Icono de moneda después del número
+            const monedaIcono = this.add.image(xPos + 2, yPos + 90 + 25, "icono_moneda")
+                .setOrigin(0, 0.5)
+                .setDisplaySize(35, 35) // Ajustar tamaño del icono de moneda
+                .setDepth(24);
+
+            this.menuCompra.add(boton);
+            this.menuCompra.add(textoNumero);
+            this.menuCompra.add(monedaIcono);
+        }
+
+        // 🔹 Obtener la escena del juego para acceder a las monedas actuales
+        const gameScene = this.scene.get('GameScene');
+
+        // 🔹 Contador de monedas
+        this.contadorMonedas = this.add.text(
+            menuAncho / 2 - 100, // Posición a la derecha
+            -menuAlto / 2 + 40, // A la misma altura que el título
+            `${gameScene.monedas}`,
+            { fontSize: "32px", fill: "#000000", fontFamily: "Arial", fontStyle: "bold" }
+        ).setOrigin(1, 0.5).setDepth(22);
+
+        // 🔹 Icono de moneda
+        this.monedaIcono = this.add.image(
+            menuAncho / 2 - 90, // Justo a la derecha del contador
+            -menuAlto / 2 + 40,
+            "icono_moneda"
+        ).setOrigin(0, 0.5).setDisplaySize(35, 35).setDepth(22);
+
+        // 🔹 Agregar los elementos al contenedor del menú
+        this.menuContainer.add([this.contadorMonedas, this.monedaIcono]);
+
+        // 🔹 Detectar tecla ESPACIO para cerrar el menú
+        this.input.keyboard.on("keydown-SPACE", () => {
+            console.log("🚪 Cerrando ArsenalMenuScene...");
+            this.scene.stop(); // 🔹 Cerrar la escena
+        });
+    }
+
+    comprarItem(nombre, valor) {
+        const gameScene = this.scene.get('GameScene');
+
+        if (gameScene.monedas >= valor) {
+            gameScene.monedas -= valor;
+
+            if (nombre === "escalera") {
+                gameScene.cantidadEscaleras++;
+                gameScene.contadorEscaleras.setText(gameScene.cantidadEscaleras);
+            } else if (nombre.includes("pico")) {
+                gameScene.picoActual = nombre;
+                gameScene.iconoPico.setTexture(gameScene.picoActual);
+                gameScene.durabilidadPico = gameScene.durabilidadesPicos[gameScene.picoActual];
+                gameScene.barraDurabilidad.setScale(1, 1);
+            }
+
+            console.log(`🟢 Compraste ${nombre}. Te quedan ${gameScene.monedas} monedas.`);
+
+            // 🔹 Actualizar el contador de monedas en el menú
+            this.contadorMonedas.setText(gameScene.monedas);
+        } else {
+            console.log(`❌ No tienes suficientes monedas para comprar ${nombre}.`);
+        }
+    }
+}
+
 class PauseMenu extends Phaser.Scene {
     constructor() {
         super({ key: 'PauseMenu' });
@@ -2115,7 +2268,7 @@ const config = {
             debug: false
         }
     },
-    scene: [MenuScene, GameScene, PauseMenu] // Incluir ambas escenas
+    scene: [MenuScene, GameScene, PauseMenu, ArsenalMenuScene] // Incluir escenas
 };
 
 const game = new Phaser.Game(config);
