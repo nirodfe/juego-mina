@@ -286,7 +286,7 @@ class GameScene extends Phaser.Scene {
 
         if (user) {
             console.log("🔹 Usuario autenticado, cargando partida...");
-            //cargarPartida(user.uid);
+            cargarPartida(user.uid);
         } else {
             console.log("ℹ Usuario no autenticado, iniciando nueva partida.");
         }
