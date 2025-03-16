@@ -1625,56 +1625,10 @@ class GameScene extends Phaser.Scene {
             }
         }
 
-        // ✅ Todos los minerales han sido minados, activar la pantalla final
+        // ✅ Todos los minerales han sido minados, activar la escena de victoria
         this.juegoTerminado = true;
-        this.mostrarPantallaFinal();
-    }
-
-    mostrarPantallaFinal() {
-        console.log("🏆 ¡Felicidades! Has minado todos los minerales.");
-
-        // ✅ Bloquear completamente el movimiento del jugador
-        this.player.setVelocity(0, 0);
-        this.moving = false;
-        // Desactivar las teclas de movimiento, pero mantener la barra espaciadora
-        this.cursors.left.enabled = false;
-        this.cursors.right.enabled = false;
-        this.cursors.up.enabled = false;
-        this.cursors.down.enabled = false;
-        this.spaceKey.enabled = false;
-
-        // ✅ Detener cualquier animación de movimiento (Tween)
-        if (this.currentTween) {
-            this.currentTween.stop();
-            this.currentTween = null;
-        }
-
-        // ✅ Crear un fondo semitransparente
-        const overlay = this.add.rectangle(
-            this.cameras.main.scrollX + this.cameras.main.width / 2,
-            this.cameras.main.scrollY + this.cameras.main.height / 2,
-            this.cameras.main.width,
-            this.cameras.main.height,
-            0x000000,
-            0.7
-        ).setDepth(100);
-
-        // ✅ Crear el texto de felicitación
-        const textoFinal = this.add.text(
-            this.cameras.main.scrollX + this.cameras.main.width / 2,
-            this.cameras.main.scrollY + this.cameras.main.height / 2,
-            "🎉 ¡Felicidades!\nHas completado Miner Madness",
-            {
-                fontSize: "48px",
-                fill: "#ffffff",
-                fontStyle: "bold",
-                fontFamily: "Arial",
-                align: "center"
-            }
-        ).setOrigin(0.5).setDepth(101);
-
-        // ✅ Detener completamente el juego
-        this.physics.world.pause();
+        this.scene.pause(); // Pausar GameScene
+        this.scene.launch("VictoryScene"); // Iniciar la escena de victoria
     }
 
     startFall(fallDistance) {
@@ -2089,6 +2043,79 @@ class PauseMenu extends Phaser.Scene {
     }
 }
 
+class VictoryScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'VictoryScene' });
+    }
+
+    create() {
+        console.log("🏆 Escena de victoria iniciada...");
+
+        // ✅ Fondo semitransparente
+        const overlay = this.add.rectangle(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            this.cameras.main.width,
+            this.cameras.main.height,
+            0x000000,
+            0.7
+        ).setDepth(100);
+
+        // ✅ Texto de felicitación
+        this.add.text(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2 - 75,
+            "🎉 ¡Felicidades!\nHas completado Miner Madness",
+            {
+                fontSize: "48px",
+                fill: "#ffffff",
+                fontStyle: "bold",
+                fontFamily: "Arial",
+                align: "center"
+            }
+        ).setOrigin(0.5).setDepth(101);
+
+        // ✅ Botón "Continuar Partida"
+        const botonContinuar = this.add.text(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2 + 50,
+            "Continuar Partida",
+            {
+                fontSize: "32px",
+                fill: "#ffffff",
+                backgroundColor: "#28a745",
+                padding: 10
+            }
+        ).setOrigin(0.5).setDepth(102).setInteractive();
+
+        // ✅ Botón "Menú Inicial"
+        const botonMenu = this.add.text(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2 + 120,
+            "Menú Inicial",
+            {
+                fontSize: "32px",
+                fill: "#ffffff",
+                backgroundColor: "#dc3545",
+                padding: 10
+            }
+        ).setOrigin(0.5).setDepth(102).setInteractive();
+
+        // ✅ Acciones de los botones
+        botonContinuar.on("pointerdown", () => {
+            console.log("🎮 Continuando la partida...");
+            this.scene.stop(); // Detener la escena de victoria
+            this.scene.resume('GameScene'); // Reanudar el juego
+        });
+
+        botonMenu.on("pointerdown", () => {
+            console.log("📜 Volviendo al menú principal...");
+            this.scene.stop('GameScene'); // Detener el juego
+            this.scene.start('MenuScene'); // Volver al menú principal
+        });
+    }
+}
+
 const config = {
     type: Phaser.AUTO,
     width: window.innerWidth, // Ancho dinámico según el tamaño de la ventana
@@ -2100,7 +2127,7 @@ const config = {
             debug: false
         }
     },
-    scene: [MenuScene, GameScene, PauseMenu, ArsenalMenuScene, RefineriaMenuScene] // Incluir escenas
+    scene: [MenuScene, GameScene, PauseMenu, ArsenalMenuScene, RefineriaMenuScene, VictoryScene] // Incluir escenas
 };
 
 const game = new Phaser.Game(config);
