@@ -146,6 +146,19 @@ function guardarPartida() {
         return;
     }
 
+    // 🔹 Generar el gridState con solo celdas modificadas
+    let gridState = [];
+    for (let x = 0; x < gameScene.grid.length; x++) {
+        for (let y = 0; y < gameScene.grid[x].length; y++) {
+            const cellType = gameScene.grid[x][y].type;
+
+            // Solo guardamos celdas que no sean tierra ni piedra
+            if (cellType !== 'tierra' && cellType !== 'piedra') {
+                gridState.push({ x, y, type: cellType });
+            }
+        }
+    }
+
     // 🔹 Obtener los datos reales del juego
     const datosPartida = {
         posX: Math.floor(gameScene.player.x / gameScene.tileSize),
@@ -164,7 +177,8 @@ function guardarPartida() {
         picoTipo: gameScene.picoActual,
         picoDurabilidad: gameScene.durabilidadPico,
         vida: gameScene.health,
-        escaleras: gameScene.cantidadEscaleras
+        escaleras: gameScene.cantidadEscaleras,
+        gridState: gridState // 📌 Guardamos el estado del grid modificado
     };
 
     console.log("📌 Datos de la partida a guardar:", datosPartida);
@@ -250,9 +264,32 @@ function cargarPartida(userId) {
                     .fillStyle(0x00ff00, 1)
                     .fillRoundedRect(52, 42, (gameScene.health / 100) * 200, 12, 6);
 
+                // 🔹 Aplicar el gridState sobre el mundo generado aleatoriamente
+                if (datos.gridState) {
+                    console.log("🔄 Aplicando gridState...");
+                    for (const cell of datos.gridState) {
+                        const { x, y, type } = cell;
+
+                        // 🟢 Luego, aplicamos la celda guardada
+                        gameScene.grid[x][y].type = type;
+
+                        // ✅ Si la celda tenía una escalera, la recreamos visualmente
+                        if (type == "ladder") {
+                            gameScene.grid[x][y].sprite = gameScene.add.image(
+                                x * gameScene.tileSize,
+                                y * gameScene.tileSize,
+                                "ladder"
+                            ).setOrigin(0).setDisplaySize(gameScene.tileSize, gameScene.tileSize);
+                        }
+                    }
+                }
+                gameScene.fillMaterials(); // 🟢 Rellenar los materiales faltantes
+
+                console.log("✅ Grid restaurado exitosamente.");
                 console.log("🔹 Partida cargada con éxito.");
             } else {
                 console.log("ℹ No hay partida guardada. Se iniciará una nueva.");
+                gameScene.generateRandomMaterial();
             }
             // 🔹 Ocultar el panel de carga cuando los datos estén listos
             if (gameScene.loadingContainer) {
@@ -261,6 +298,8 @@ function cargarPartida(userId) {
         })
         .catch((error) => {
             console.error("❌ Error al cargar partida:", error);
+            const gameScene = game.scene.getScene("GameScene");
+            gameScene.generateRandomMaterial();
             // 🔹 Ocultar el panel de carga cuando los datos estén listos
             if (gameScene.loadingContainer) {
                 gameScene.loadingContainer.setVisible(false);
@@ -361,15 +400,8 @@ class GameScene extends Phaser.Scene {
         // 🔹 Asegurar que el panel esté al frente de todo
         this.loadingContainer.setDepth(1000);
 
+        // Cargar partida
         const user = window.firebaseAuth.currentUser;
-
-        if (user) {
-            console.log("🔹 Usuario autenticado, cargando partida...");
-            this.loadingContainer.setVisible(true);
-            cargarPartida(user.uid);
-        } else {
-            console.log("ℹ Usuario no autenticado, iniciando nueva partida.");
-        }
 
         // Detectar la tecla ESC para alternar entre pausa y juego
         this.input.keyboard.on("keydown-ESC", () => {
@@ -420,129 +452,6 @@ class GameScene extends Phaser.Scene {
             }
         }
 
-        // Definir las capas donde aparecen los minerales
-        this.mineralSpawnLayers = {
-            carbon: { min: 3, max: 100, count: 900 },   // 🟤 Carbón: desde la primera capa de piedra
-            cobre: { min: 10, max: 80, count: 700 },    // 🟠 Cobre: más profundo que el carbón
-            hierro: { min: 25, max: 120, count: 600 },  // 🔩 Hierro: aparece después del cobre
-            plata: { min: 40, max: 150, count: 500 },   // 🥈 Plata: empieza más profundo que antes
-            oro: { min: 60, max: 175, count: 350 },     // 🟡 Oro: solo en las capas bajas
-            rubi: { min: 80, max: 175, count: 250 },    // ❤️ Rubí: sigue siendo raro y profundo
-            esmeralda: { min: 100, max: 175, count: 180 },  // 💚 Esmeralda: aún más raro
-            diamante: { min: 125, max: 175, count: 120 }   // 💎 Diamante: el más raro y profundo
-        };
-
-        // Generar Carbon (Desde la primera capa de piedra hasta la capa 80)
-        let carbonCount = 900;
-        while (carbonCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1);
-            const y = Phaser.Math.Between(3, 100);
-
-            if (this.grid[x] && this.grid[x][y] && this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'carbon';
-                carbonCount--;
-            }
-        }
-
-        // Generar Cobre (Aparece un poco más profundo)
-        let cobreCount = 700;
-        while (cobreCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1);
-            const y = Phaser.Math.Between(10, 80); // 📌 Ahora empieza en 10 en vez de 15
-
-            if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'cobre';
-                cobreCount--;
-            }
-        }
-
-        // Generar Hierro
-        let hierroCount = 600;
-        while (hierroCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1);
-            const y = Phaser.Math.Between(25, 120); // 📌 Antes 30, ahora 25 para no estar tan profundo
-
-            if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'hierro';
-                hierroCount--;
-            }
-        }
-
-        // Generar Plata
-        let plataCount = 500;
-        while (plataCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1);
-            const y = Phaser.Math.Between(40, 150); // 📌 Antes 50, ahora 40 para no estar tan profundo
-
-            if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'plata';
-                plataCount--;
-            }
-        }
-
-        // Generar Oro
-        let oroCount = 350;
-        while (oroCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1);
-            const y = Phaser.Math.Between(60, gridSize - 1);
-
-            if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'oro';
-                oroCount--;
-            }
-        }
-
-        // Generar Rubí
-        let rubiCount = 250;
-        while (rubiCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1);
-            const y = Phaser.Math.Between(80, gridSize - 1);
-
-            if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'rubi';
-                rubiCount--;
-            }
-        }
-
-        // Generar Esmeralda
-        let esmeraldaCount = 180;
-        while (esmeraldaCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1);
-            const y = Phaser.Math.Between(100, gridSize - 1);
-
-            if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'esmeralda';
-                esmeraldaCount--;
-            }
-        }
-
-        // Generar Diamante
-        let diamanteCount = 120;
-        while (diamanteCount > 0) {
-            const x = Phaser.Math.Between(0, gridSize - 1);
-            const y = Phaser.Math.Between(125, gridSize - 1);
-
-            if (this.grid[x][y].type === 'piedra') {
-                this.grid[x][y].type = 'diamante';
-                diamanteCount--;
-            }
-        }
-
-        // Crear cuadrículas
-        for (let x = 0; x < gridSize; x++) {
-            for (let y = 0; y < gridSize; y++) {
-                let color;
-                if (y < 3) {
-                    color = 0x87CEEB; // Azul cielo
-                } else if (y >= 3 && y <= 5) {
-                    color = 0x8B4513; // Marrón tierra
-                } else {
-                    color = 0x444444; // Gris piedra
-                }
-                this.add.rectangle(x * tileSize, y * tileSize, tileSize, tileSize, color)
-                    .setOrigin(0);
-            }
-        }
         this.tileSize = tileSize;
 
         const numNubes = 75; // Número de nubes
@@ -584,70 +493,6 @@ class GameScene extends Phaser.Scene {
 
             const nube = this.add.image(0, 0, tipoNube).setOrigin(0);
             resetNube(nube, true);
-        }
-
-        for (let x = 0; x < gridSize; x++) {
-            for (let y = 0; y < gridSize; y++) {
-                if (y === 3) { // Fila número 4
-                    this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'tierraHierba')
-                        .setOrigin(0)
-                        .setDisplaySize(this.tileSize, this.tileSize);
-                } else if (y >= 4 && y <= 5) { // Otras filas de tierra
-                    this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'tierra')
-                        .setOrigin(0)
-                        .setDisplaySize(this.tileSize, this.tileSize);
-                } else if (y > 5) { // Filas de piedra y carbón
-                    if (this.grid[x][y].type === 'carbon') {
-                        // Dibujar fondo de piedra
-                        this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
-                            .setOrigin(0)
-                            .setDisplaySize(this.tileSize, this.tileSize);
-                        // Dibujar capa de carbón encima
-                        this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'carbon')
-                            .setOrigin(0)
-                            .setDisplaySize(this.tileSize, this.tileSize);
-                    } else if (this.grid[x][y].type === 'cobre') {
-                        // Dibujar bloque de cobre
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'cobre')
-                            .setOrigin(0)
-                            .setDisplaySize(this.tileSize, this.tileSize);
-                    } else if (this.grid[x][y].type === 'hierro') {
-                        // Dibujar bloque de hierro
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'hierro')
-                            .setOrigin(0)
-                            .setDisplaySize(this.tileSize, this.tileSize);
-                    } else if (this.grid[x][y].type === 'plata') {
-                        // Dibujar bloque de plata
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'plata')
-                            .setOrigin(0)
-                            .setDisplaySize(this.tileSize, this.tileSize);
-                    } else if (this.grid[x][y].type === 'oro') {
-                        // Dibujar bloque de oro
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'oro')
-                            .setOrigin(0)
-                            .setDisplaySize(this.tileSize, this.tileSize);
-                    } else if (this.grid[x][y].type === 'rubi') { // Nueva lógica para el rubí
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'rubi')
-                            .setOrigin(0)
-                            .setDisplaySize(this.tileSize, this.tileSize);
-                    } else if (this.grid[x][y].type === 'esmeralda') {
-                        // Dibujar bloque de esmeralda
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'esmeralda')
-                            .setOrigin(0)
-                            .setDisplaySize(this.tileSize, this.tileSize);
-                    } else if (this.grid[x][y].type === 'diamante') {
-                        // Dibujar bloque de diamante
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'diamante')
-                            .setOrigin(0)
-                            .setDisplaySize(this.tileSize, this.tileSize);
-                    } else {
-                        // Dibujar bloque de piedra
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
-                            .setOrigin(0)
-                            .setDisplaySize(this.tileSize, this.tileSize);
-                    }
-                }
-            }
         }
 
         // Añadir el personaje
@@ -1020,6 +865,220 @@ class GameScene extends Phaser.Scene {
                 this.grid[tiendaX][tiendaY] = { type: 'iron', sprite: bloque };
             });
         });
+
+        // Cargar partida si el usuario está autenticado
+        if (user) {
+            console.log("🔹 Usuario autenticado, cargando partida...");
+            this.loadingContainer.setVisible(true);
+            cargarPartida(user.uid);
+        } else {
+            console.log("ℹ Usuario no autenticado, iniciando nueva partida.");
+            this.generateRandomMaterial();
+        }
+    }
+
+    generateRandomMaterial() {
+        const tileSize = 128;
+        const gridSize = 175;
+
+        // Definir las capas donde aparecen los minerales
+        this.mineralSpawnLayers = {
+            carbon: { min: 3, max: 100, count: 900 },   // 🟤 Carbón: desde la primera capa de piedra
+            cobre: { min: 10, max: 80, count: 700 },    // 🟠 Cobre: más profundo que el carbón
+            hierro: { min: 25, max: 120, count: 600 },  // 🔩 Hierro: aparece después del cobre
+            plata: { min: 40, max: 150, count: 500 },   // 🥈 Plata: empieza más profundo que antes
+            oro: { min: 60, max: 175, count: 350 },     // 🟡 Oro: solo en las capas bajas
+            rubi: { min: 80, max: 175, count: 250 },    // ❤️ Rubí: sigue siendo raro y profundo
+            esmeralda: { min: 100, max: 175, count: 180 },  // 💚 Esmeralda: aún más raro
+            diamante: { min: 125, max: 175, count: 120 }   // 💎 Diamante: el más raro y profundo
+        };
+
+        // Generar Carbon (Desde la primera capa de piedra hasta la capa 80)
+        let carbonCount = 900;
+        while (carbonCount > 0) {
+            const x = Phaser.Math.Between(0, gridSize - 1);
+            const y = Phaser.Math.Between(3, 100);
+
+            if (this.grid[x] && this.grid[x][y] && this.grid[x][y].type === 'piedra') {
+                this.grid[x][y].type = 'carbon';
+                carbonCount--;
+            }
+        }
+
+        // Generar Cobre (Aparece un poco más profundo)
+        let cobreCount = 700;
+        while (cobreCount > 0) {
+            const x = Phaser.Math.Between(0, gridSize - 1);
+            const y = Phaser.Math.Between(10, 80); // 📌 Ahora empieza en 10 en vez de 15
+
+            if (this.grid[x][y].type === 'piedra') {
+                this.grid[x][y].type = 'cobre';
+                cobreCount--;
+            }
+        }
+
+        // Generar Hierro
+        let hierroCount = 600;
+        while (hierroCount > 0) {
+            const x = Phaser.Math.Between(0, gridSize - 1);
+            const y = Phaser.Math.Between(25, 120); // 📌 Antes 30, ahora 25 para no estar tan profundo
+
+            if (this.grid[x][y].type === 'piedra') {
+                this.grid[x][y].type = 'hierro';
+                hierroCount--;
+            }
+        }
+
+        // Generar Plata
+        let plataCount = 500;
+        while (plataCount > 0) {
+            const x = Phaser.Math.Between(0, gridSize - 1);
+            const y = Phaser.Math.Between(40, 150); // 📌 Antes 50, ahora 40 para no estar tan profundo
+
+            if (this.grid[x][y].type === 'piedra') {
+                this.grid[x][y].type = 'plata';
+                plataCount--;
+            }
+        }
+
+        // Generar Oro
+        let oroCount = 350;
+        while (oroCount > 0) {
+            const x = Phaser.Math.Between(0, gridSize - 1);
+            const y = Phaser.Math.Between(60, gridSize - 1);
+
+            if (this.grid[x][y].type === 'piedra') {
+                this.grid[x][y].type = 'oro';
+                oroCount--;
+            }
+        }
+
+        // Generar Rubí
+        let rubiCount = 250;
+        while (rubiCount > 0) {
+            const x = Phaser.Math.Between(0, gridSize - 1);
+            const y = Phaser.Math.Between(80, gridSize - 1);
+
+            if (this.grid[x][y].type === 'piedra') {
+                this.grid[x][y].type = 'rubi';
+                rubiCount--;
+            }
+        }
+
+        // Generar Esmeralda
+        let esmeraldaCount = 180;
+        while (esmeraldaCount > 0) {
+            const x = Phaser.Math.Between(0, gridSize - 1);
+            const y = Phaser.Math.Between(100, gridSize - 1);
+
+            if (this.grid[x][y].type === 'piedra') {
+                this.grid[x][y].type = 'esmeralda';
+                esmeraldaCount--;
+            }
+        }
+
+        // Generar Diamante
+        let diamanteCount = 120;
+        while (diamanteCount > 0) {
+            const x = Phaser.Math.Between(0, gridSize - 1);
+            const y = Phaser.Math.Between(125, gridSize - 1);
+
+            if (this.grid[x][y].type === 'piedra') {
+                this.grid[x][y].type = 'diamante';
+                diamanteCount--;
+            }
+        }
+
+        this.fillMaterials();
+    }
+
+    fillMaterials() {
+        const tileSize = 128;
+        const gridSize = 175;
+        for (let x = 0; x < gridSize; x++) {
+            for (let y = 0; y < gridSize; y++) {
+                if (this.grid[x][y].type === 'empty' || this.grid[x][y].type === 'ladder') {
+                    continue;
+                }
+
+                if (y === 3) { // Fila número 4
+                    this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'tierraHierba')
+                        .setOrigin(0)
+                        .setDisplaySize(this.tileSize, this.tileSize);
+                } else if (y >= 4 && y <= 5) { // Otras filas de tierra
+                    this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'tierra')
+                        .setOrigin(0)
+                        .setDisplaySize(this.tileSize, this.tileSize);
+                } else if (y > 5) { // Filas de piedra y carbón
+                    if (this.grid[x][y].type === 'carbon') {
+                        // Dibujar fondo de piedra
+                        this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+                        // Dibujar capa de carbón encima
+                        this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'carbon')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+                    } else if (this.grid[x][y].type === 'cobre') {
+                        // Dibujar bloque de cobre
+                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'cobre')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+                    } else if (this.grid[x][y].type === 'hierro') {
+                        // Dibujar bloque de hierro
+                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'hierro')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+                    } else if (this.grid[x][y].type === 'plata') {
+                        // Dibujar bloque de plata
+                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'plata')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+                    } else if (this.grid[x][y].type === 'oro') {
+                        // Dibujar bloque de oro
+                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'oro')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+                    } else if (this.grid[x][y].type === 'rubi') { // Nueva lógica para el rubí
+                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'rubi')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+                    } else if (this.grid[x][y].type === 'esmeralda') {
+                        // Dibujar bloque de esmeralda
+                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'esmeralda')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+                    } else if (this.grid[x][y].type === 'diamante') {
+                        // Dibujar bloque de diamante
+                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'diamante')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+                    } else {
+                        // Dibujar bloque de piedra
+                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+                    }
+                }
+            }
+        }
+
+        // Crear cuadrículas
+        for (let x = 0; x < gridSize; x++) {
+            for (let y = 0; y < gridSize; y++) {
+                let color;
+                if (y < 3) {
+                    color = 0x87CEEB; // Azul cielo
+                } else if (y >= 3 && y <= 5) {
+                    color = 0x8B4513; // Marrón tierra
+                } else {
+                    color = 0x444444; // Gris piedra
+                }
+                this.add.rectangle(x * tileSize, y * tileSize, tileSize, tileSize, color)
+                    .setOrigin(0)
+                    .setDepth(-1);// Asegurar que esté detrás de otros elementos
+            }
+        }
     }
 
     updateHealthBar() {
@@ -1137,7 +1196,7 @@ class GameScene extends Phaser.Scene {
         this.mineralTextos.rubi.setText(`Rubí: ${this.rubiCount}`);
         this.mineralTextos.esmeralda.setText(`Esmeralda: ${this.esmeraldaCount}`);
         this.mineralTextos.diamante.setText(`Diamante: ${this.diamanteCount}`);
-    }    
+    }
 
     update() {
         if (this.loadingContainer) {
@@ -1265,7 +1324,7 @@ class GameScene extends Phaser.Scene {
         } else if (this.cursors.right.isDown) {
             // Girar la textura a la derecha
             this.player.setFlipX(false); // Girar a la derecha
-            
+
             if (this.player.x < this.physics.world.bounds.width - tileSize) {
                 if (this.spaceKey.isDown) {
                     if (this.moving && !this.isLadderMovement && this.currentTween) {
