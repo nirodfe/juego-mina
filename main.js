@@ -229,9 +229,18 @@ function cargarPartida(userId) {
                 gameScene.rubiCount = datos.inventario.rubi || 0;
                 gameScene.esmeraldaCount = datos.inventario.esmeralda || 0;
                 gameScene.diamanteCount = datos.inventario.diamante || 0;
+                // 🔹 Actualizar los contadores de minerales en la mochila
+                if (gameScene.actualizarContadoresMochila) {
+                    gameScene.actualizarContadoresMochila();
+                }
                 gameScene.monedas = datos.monedas || 0;
                 gameScene.picoActual = datos.picoTipo || "pico_madera";
+                gameScene.iconoPico.setTexture(gameScene.picoActual); // 🔹 Actualizar la imagen del icono del pico
                 gameScene.durabilidadPico = datos.picoDurabilidad || 100;
+                // 🔹 Actualizar la barra de durabilidad en la UI
+                const durabilidadMaxima = gameScene.durabilidadesPicos[gameScene.picoActual] || 100;
+                const porcentajeDurabilidad = gameScene.durabilidadPico / durabilidadMaxima;
+                gameScene.barraDurabilidad.setScale(porcentajeDurabilidad, 1);
                 gameScene.health = datos.vida || 100;
                 gameScene.cantidadEscaleras = datos.escaleras || 0;
 
@@ -931,6 +940,7 @@ class GameScene extends Phaser.Scene {
                 this.moving = false;
             } else {
                 // Abrir el menú de la mochila
+                this.actualizarContadoresMochila();
                 this.player.setVelocity(0, 0);
                 this.moving = false;
                 this.menuContainer.setPosition(
@@ -1118,12 +1128,30 @@ class GameScene extends Phaser.Scene {
         }
     }
 
+    actualizarContadoresMochila() {
+        this.mineralTextos.carbon.setText(`Carbón: ${this.carbonCount}`);
+        this.mineralTextos.cobre.setText(`Cobre: ${this.cobreCount}`);
+        this.mineralTextos.hierro.setText(`Hierro: ${this.hierroCount}`);
+        this.mineralTextos.plata.setText(`Plata: ${this.plataCount}`);
+        this.mineralTextos.oro.setText(`Oro: ${this.oroCount}`);
+        this.mineralTextos.rubi.setText(`Rubí: ${this.rubiCount}`);
+        this.mineralTextos.esmeralda.setText(`Esmeralda: ${this.esmeraldaCount}`);
+        this.mineralTextos.diamante.setText(`Diamante: ${this.diamanteCount}`);
+    }    
+
     update() {
         if (this.loadingContainer) {
             this.loadingContainer.setPosition(
                 this.cameras.main.scrollX + this.cameras.main.width / 2,
                 this.cameras.main.scrollY + this.cameras.main.height / 2
             );
+
+            // 🔹 Si la pantalla de carga ya no es visible, eliminarla del update
+            if (!this.loadingContainer.visible) {
+                console.log("✅ Pantalla de carga eliminada del update.");
+                this.loadingContainer.destroy();
+                this.loadingContainer = null;
+            }
         }
 
         // Obtener la posición actual del jugador en la cuadrícula
@@ -1472,29 +1500,23 @@ class GameScene extends Phaser.Scene {
             // ✅ Recolectar minerales y actualizar la UI
             if (blockType === 'carbon') {
                 this.carbonCount += 1;
-                this.carbonText.setText(`Carbón: ${this.carbonCount}`);
             } else if (blockType === 'cobre') {
                 this.cobreCount += 1;
-                this.cobreText.setText(`Cobre: ${this.cobreCount}`);
             } else if (blockType === 'hierro') {
                 this.hierroCount += 1;
-                this.hierroText.setText(`Hierro: ${this.hierroCount}`);
             } else if (blockType === 'plata') {
                 this.plataCount += 1;
-                this.plataText.setText(`Plata: ${this.plataCount}`);
             } else if (blockType === 'oro') {
                 this.oroCount = (this.oroCount || 0) + 1;
-                this.oroText.setText(`Oro: ${this.oroCount}`);
             } else if (blockType === 'rubi') {
                 this.rubiCount = (this.rubiCount || 0) + 1;
-                this.rubiText.setText(`Rubí: ${this.rubiCount}`);
             } else if (blockType === 'esmeralda') {
                 this.esmeraldaCount += 1;
-                this.esmeraldaText.setText(`Esmeraldas: ${this.esmeraldaCount}`);
             } else if (blockType === 'diamante') {
                 this.diamanteCount = (this.diamanteCount || 0) + 1;
-                this.diamanteText.setText(`Diamantes: ${this.diamanteCount}`);
             }
+
+            this.actualizarContadoresMochila();
 
             // ✅ Eliminar todos los sprites del bloque
             if (block.sprite) {
