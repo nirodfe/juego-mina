@@ -1158,6 +1158,7 @@ class GameScene extends Phaser.Scene {
                 .setDepth(20);
             this.menuRefineriaContainer.add(this.menuBorde);
         } else {
+            console.log("🟢 Redimensionando borde...");
             this.menuBorde.setSize(menuAncho, menuAlto);
         }
 
