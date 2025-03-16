@@ -1242,6 +1242,9 @@ class GameScene extends Phaser.Scene {
         }
 
         if (this.cursors.left.isDown) {
+            // Girar la textura a la izquierda
+            this.player.setFlipX(true); // Girar a la izquierda
+
             if (this.player.x > 0) {
                 if (this.spaceKey.isDown) {
                     // Si ya se está moviendo sin escalera, cancelamos y reiniciamos con escalera
@@ -1260,6 +1263,9 @@ class GameScene extends Phaser.Scene {
                 }
             }
         } else if (this.cursors.right.isDown) {
+            // Girar la textura a la derecha
+            this.player.setFlipX(false); // Girar a la derecha
+            
             if (this.player.x < this.physics.world.bounds.width - tileSize) {
                 if (this.spaceKey.isDown) {
                     if (this.moving && !this.isLadderMovement && this.currentTween) {
