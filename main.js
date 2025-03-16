@@ -1284,150 +1284,11 @@ class GameScene extends Phaser.Scene {
     }
 
     abrirMenuArsenal() {
-        if (this.menuArsenalContainer.visible) return; // Si ya está abierto, no hacer nada
+        console.log("🟢 Abriendo ArsenalMenuScene...");
 
-        console.log("🟢 Abriendo menú de Arsenal Minero...");
-
-        // Mostrar el contador de monedas al abrir el menú
-        this.monedaIcono.setVisible(true);
-        this.monedaTexto.setVisible(true);
-
-        const borde = 38; // 1 cm en píxeles
-        const menuAncho = this.cameras.main.width - 2 * borde;
-        const menuAlto = this.cameras.main.height - 2 * borde;
-
-        // Crear el borde (marrón) para el menú de Arsenal
-        if (!this.menuArsenalBorde) {
-            this.menuArsenalBorde = this.add.rectangle(0, 0, menuAncho, menuAlto, 0xFFF0C9, 1) // Marrón oscuro
-                .setOrigin(0.5)
-                .setDepth(20);
-            this.menuArsenalContainer.add(this.menuArsenalBorde);
-        } else {
-            this.menuArsenalBorde.setSize(menuAncho, menuAlto);
-        }
-
-        // Agregar el título "Arsenal Minero"
-        if (!this.menuTituloArsenal) {
-            this.menuTituloArsenal = this.add.text(0, -menuAlto / 2 + 40, "Arsenal Minero", {
-                fontSize: "48px",
-                fill: "#000000", // Negro
-                fontStyle: "bold",
-                fontFamily: "Arial"
-            })
-                .setOrigin(0.5)
-                .setDepth(22);
-            this.menuArsenalContainer.add(this.menuTituloArsenal);
-        }
-
-        // Centrar el menú respecto a la cámara y el mundo
-        this.menuArsenalContainer.setPosition(
-            this.cameras.main.scrollX + this.cameras.main.width / 2,
-            this.cameras.main.scrollY + this.cameras.main.height / 2
-        );
-
-        // Detener el personaje completamente al abrir el menú
-        this.player.setVelocity(0, 0); // Para detener cualquier movimiento
-        this.moving = false; // Reiniciar el estado de movimiento
-
-        // Desactivar las teclas de movimiento, pero mantener la barra espaciadora
-        this.cursors.left.enabled = false;
-        this.cursors.right.enabled = false;
-        this.cursors.up.enabled = false;
-        this.cursors.down.enabled = false;
-
-        // Definir las herramientas con sus imágenes y valores
-        const herramientas = [
-            { nombre: "escalera", imagen: "ladder", valor: 2 },
-            { nombre: "pico_madera", imagen: "pico_madera", valor: 5 },
-            { nombre: "pico_piedra", imagen: "pico_piedra", valor: 10 },
-            { nombre: "pico_hierro", imagen: "pico_hierro", valor: 25 },
-            { nombre: "pico_oro", imagen: "pico_oro", valor: 50 }
-        ];
-
-        // Crear contenedor para los botones de compra
-        if (!this.menuCompra) {
-            this.menuCompra = this.add.container(0, 0).setDepth(22).setVisible(true);
-            this.menuArsenalContainer.add(this.menuCompra);
-
-            const columnas = 5;  // 5 columnas
-            const filas = 1;     // 1 fila
-            const espacioX = menuAncho / columnas; // Espacio horizontal
-            const espacioY = menuAlto / filas;   // Espacio vertical
-
-            for (let i = 0; i < herramientas.length; i++) {
-                const columna = i % columnas;
-                const fila = Math.floor(i / columnas);
-
-                const xPos = -menuAncho / 2 + espacioX * columna + espacioX / 2;
-                const yPos = -menuAlto / 2.2 + espacioY * fila + espacioY / 2;
-
-                // Crear botón con el icono del ítem
-                const boton = this.add.image(xPos, yPos, herramientas[i].imagen)
-                    .setOrigin(0.5)
-                    .setDisplaySize(espacioX * 0.55, espacioY / 2 * 0.55) // Ajusta al tamaño de la cuadrícula
-                    .setInteractive({ useHandCursor: true })
-                    .on('pointerdown', () => {
-                        this.comprarItem(herramientas[i].nombre, herramientas[i].valor);
-                    });
-
-                // Texto con el precio del ítem
-                const textoNumero = this.add.text(xPos - 2, yPos + 92 + 25, `${herramientas[i].valor}`, {
-                    fontSize: "24px",
-                    fill: "#000000",
-                    fontStyle: "bold",
-                    fontFamily: "Arial"
-                }).setOrigin(1, 0.5).setDepth(23);
-
-                // Icono de moneda después del número
-                const monedaIcono = this.add.image(xPos + 2, yPos + 90 + 25, "icono_moneda")
-                    .setOrigin(0, 0.5)
-                    .setDisplaySize(35, 35) // Ajustar tamaño del icono de moneda
-                    .setDepth(23);
-
-                this.menuCompra.add(boton);
-                this.menuCompra.add(textoNumero);
-                this.menuCompra.add(monedaIcono);
-            }
-        }
-
-        this.menuArsenalContainer.setVisible(true);
-        this.physics.world.pause(); // Pausar el mundo físico
-        this.cameras.main.stopFollow(); // Detener el seguimiento de la cámara
-    }
-
-    cerrarMenuArsenal() {
-        if (!this.menuArsenalContainer.visible) return; // Si ya está cerrado, no hacer nada
-
-        console.log("🔴 Cerrando menú del arsenal...");
-
-        // Ocultar el contador de monedas al cerrar la refineria
-        this.monedaIcono.setVisible(false);
-        this.monedaTexto.setVisible(false);
-
-        this.menuArsenalContainer.setVisible(false); // Ocultar el menú de la refineria
-        this.physics.world.resume(); // Reanudar el mundo físico
-        this.cameras.main.startFollow(this.player); // Volver a seguir al jugador
-
-        // Asegurar que el personaje no tenga movimiento residual
-        this.player.setVelocity(0, 0);
-        this.moving = false;
-
-        // Reactivar movimiento del personaje
-        this.cursors.left.enabled = true;
-        this.cursors.right.enabled = true;
-        this.cursors.up.enabled = true;
-        this.cursors.down.enabled = true;
-
-        // ✅ Asegurar que el personaje no tenga movimiento residual
-        this.player.setVelocity(0, 0);
-        this.moving = false;
-        this.currentTween = null; // Detener cualquier tween activo
-
-        // ✅ Reiniciar las teclas de movimiento
-        this.cursors.left.isDown = false;
-        this.cursors.right.isDown = false;
-        this.cursors.up.isDown = false;
-        this.cursors.down.isDown = false;
+        // 🔹 Pausar GameScene y lanzar la escena del Arsenal
+        this.scene.pause();
+        this.scene.launch('ArsenalMenuScene');
     }
 
     // Función para vender un mineral
@@ -1467,33 +1328,6 @@ class GameScene extends Phaser.Scene {
             diamante: 75
         };
         return valores[tipo] || 0; // Retorna 0 si el mineral no está en la lista
-    }
-
-    comprarItem(nombre, valor) {
-        if (this.monedas >= valor) {
-            this.monedas -= valor; // Restar monedas
-
-            if (nombre === "escalera") {
-                this.cantidadEscaleras++;
-                this.contadorEscaleras.setText(this.cantidadEscaleras);
-            } else if (nombre.includes("pico")) {
-                // Si se compra un pico, actualizar el icono en la UI
-                this.picoActual = nombre;
-                this.iconoPico.setTexture(this.picoActual);
-
-                // Restaurar la durabilidad del pico según su tipo
-                this.durabilidadPico = this.durabilidadesPicos[this.picoActual];
-                this.barraDurabilidad.setScale(1, 1); // Rellenar la barra
-            }
-
-            console.log(`🟢 Compraste ${nombre}. Te quedan ${this.monedas} monedas.`);
-
-            if (this.monedaTexto) {
-                this.monedaTexto.setText(this.monedas.toString());
-            }
-        } else {
-            console.log(`❌ No tienes suficientes monedas para comprar ${nombre}.`);
-        }
     }
 
     actualizarContadorEscaleras() {
@@ -2175,6 +2009,7 @@ class ArsenalMenuScene extends Phaser.Scene {
         this.input.keyboard.on("keydown-SPACE", () => {
             console.log("🚪 Cerrando ArsenalMenuScene...");
             this.scene.stop(); // 🔹 Cerrar la escena
+            this.scene.resume('GameScene'); // 🔹 Reanudar GameScene al cerrar el menú
         });
     }
 
