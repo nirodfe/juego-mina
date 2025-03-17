@@ -1423,24 +1423,26 @@ class GameScene extends Phaser.Scene {
 
         const targetBlock = this.grid[gridX][gridY].type;
 
-        // 🚨 Verificar si el destino es un bloque de hierro antes de mover
+        // 🚨 Lista de minerales válidos
+        const mineralesValidos = ['carbon', 'cobre', 'hierro', 'plata', 'oro', 'rubi', 'esmeralda', 'diamante'];
+
+        // 🚨 Bloquear movimiento si el bloque de destino es hierro
         if (targetBlock === 'iron') {
-            console.log("⛔ No puedes moverte sobre bloques de hierro.");
+            console.log("⛔ No puedes atravesar hierro.");
             return;
         }
 
-        // 🚨 Si el pico está roto, permitir movimiento solo en `empty` y `ladder`
-        if (this.durabilidadPico <= 0 && targetBlock !== 'empty' && targetBlock !== 'ladder') {
-            console.log("❌ Tu pico está roto, solo puedes moverte en bloques vacíos o escaleras.");
-            return;
-        }
+        // 🚨 Si el bloque de destino es un mineral y el pico no puede minarlo, mostrar advertencia y bloquear movimiento
+        if (mineralesValidos.includes(targetBlock) && !this.materialesPermitidos[this.picoActual].includes(targetBlock)) {
+            console.log(`⚠ No puedes minar ${targetBlock} con ${this.picoActual}. Mostrando advertencia...`);
 
-        // 🚨 Si el bloque de destino NO es vacío ni escalera, verificar si el pico puede minarlo
-        if (targetBlock !== 'empty' && targetBlock !== 'ladder') {
-            if (!this.materialesPermitidos[this.picoActual].includes(targetBlock)) {
-                console.log(`❌ No puedes moverte sobre ${targetBlock} con tu ${this.picoActual}.`);
-                return;
+            if (!this.scene.isActive("WarningScene")) {
+                this.scene.launch("WarningScene", {
+                    mineral: targetBlock,
+                    pico: this.picoActual.replace("pico_", "") // Eliminar "pico_" para mejor visualización
+                });
             }
+            return; // ❌ No permitimos moverse si el mineral no puede ser minado
         }
 
         this.moving = true;
@@ -1475,24 +1477,26 @@ class GameScene extends Phaser.Scene {
 
         const targetBlock = this.grid[gridX][gridY].type;
 
-        // 🚨 Verificar si el destino es un bloque de hierro antes de mover
+        // 🚨 Lista de minerales válidos
+        const mineralesValidos = ['carbon', 'cobre', 'hierro', 'plata', 'oro', 'rubi', 'esmeralda', 'diamante'];
+
+        // 🚨 Bloquear movimiento si el bloque de destino es hierro
         if (targetBlock === 'iron') {
-            console.log("⛔ No puedes moverte sobre bloques de hierro.");
+            console.log("⛔ No puedes atravesar hierro.");
             return;
         }
 
-        // 🚨 Si el pico está roto, permitir movimiento solo en `empty` y `ladder`
-        if (this.durabilidadPico <= 0 && targetBlock !== 'empty' && targetBlock !== 'ladder') {
-            console.log("❌ Tu pico está roto, solo puedes moverte en bloques vacíos o escaleras.");
-            return;
-        }
+        // 🚨 Si el bloque de destino es un mineral y el pico no puede minarlo, mostrar advertencia y bloquear movimiento
+        if (mineralesValidos.includes(targetBlock) && !this.materialesPermitidos[this.picoActual].includes(targetBlock)) {
+            console.log(`⚠ No puedes minar ${targetBlock} con ${this.picoActual}. Mostrando advertencia...`);
 
-        // 🚨 Si el bloque de destino NO es vacío ni escalera, verificar si el pico puede minarlo
-        if (targetBlock !== 'empty' && targetBlock !== 'ladder') {
-            if (!this.materialesPermitidos[this.picoActual].includes(targetBlock)) {
-                console.log(`❌ No puedes moverte sobre ${targetBlock} con tu ${this.picoActual}.`);
-                return;
+            if (!this.scene.isActive("WarningScene")) {
+                this.scene.launch("WarningScene", {
+                    mineral: targetBlock,
+                    pico: this.picoActual.replace("pico_", "") // Eliminar "pico_" para mejor visualización
+                });
             }
+            return; // ❌ No permitimos moverse si el mineral no puede ser minado
         }
 
         this.moving = true;
@@ -1539,19 +1543,8 @@ class GameScene extends Phaser.Scene {
 
         const block = (this.grid[gridX] && this.grid[gridX][gridY]) ? this.grid[gridX][gridY] : null;
         if (block) {
-            if (block.type === 'empty') {
-                return;
-            }
-
-            // 🚨 Verificar si el bloque es de hierro antes de permitir el minado
-            if (block.type === 'iron') {
-                console.log("⛏️ No puedes minar este bloque de hierro.");
-                return;
-            }
-
-            // 🚨 Verificar si el pico actual puede minar este bloque
-            if (!this.materialesPermitidos[this.picoActual].includes(block.type)) {
-                console.log(`❌ No puedes minar ${block.type} con tu ${this.picoActual}.`);
+            // 🚨 Evitar eliminar escaleras
+            if (block.type === 'empty' || block.type === 'ladder') {
                 return;
             }
 
@@ -1583,18 +1576,20 @@ class GameScene extends Phaser.Scene {
 
             this.actualizarContadoresMochila();
 
-            // ✅ Eliminar todos los sprites del bloque
-            if (block.sprite) {
-                block.sprite.destroy();
-                block.sprite = null;
-            }
-            if (block.overlaySprite) {
-                block.overlaySprite.destroy();
-                block.overlaySprite = null;
-            }
-            if (block.baseSprite) {
-                block.baseSprite.destroy();
-                block.baseSprite = null;
+            // ✅ Eliminar todos los sprites del bloque, excepto las escaleras
+            if (block.type !== 'ladder') {
+                if (block.sprite) {
+                    block.sprite.destroy();
+                    block.sprite = null;
+                }
+                if (block.overlaySprite) {
+                    block.overlaySprite.destroy();
+                    block.overlaySprite = null;
+                }
+                if (block.baseSprite) {
+                    block.baseSprite.destroy();
+                    block.baseSprite = null;
+                }
             }
 
             // ✅ Actualizar la barra de durabilidad en la UI
@@ -1612,7 +1607,6 @@ class GameScene extends Phaser.Scene {
             this.verificarFinDelJuego();
         }
     }
-
 
     verificarFinDelJuego() {
         if (this.juegoTerminado) return; // 🔹 Evitar que se ejecute más de una vez
@@ -1663,6 +1657,111 @@ class GameScene extends Phaser.Scene {
         };
 
         fallStep();
+    }
+}
+
+class WarningScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'WarningScene' });
+    }
+
+    init(data) {
+        this.mineral = data.mineral || "este mineral";
+        this.pico = data.pico || "este pico";
+    }
+
+    create() {
+
+        // ✅ Obtener la escena del juego
+        const gameScene = this.scene.get('GameScene');
+        if (gameScene) {
+            // ✅ Pausar completamente la escena del juego
+            this.scene.pause('GameScene');
+
+            // ✅ Bloquear controles
+            gameScene.input.keyboard.enabled = false;
+            gameScene.input.enabled = false;
+            gameScene.moving = false;
+
+            // ✅ Detener cualquier tween (animación de movimiento)
+            if (gameScene.currentTween) {
+                gameScene.currentTween.stop();
+                gameScene.currentTween = null;
+            }
+
+            // ✅ Asegurar que el personaje se detiene por completo
+            gameScene.player.setVelocity(0, 0);
+        }
+
+        // ✅ Fondo semitransparente
+        const overlay = this.add.rectangle(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            this.cameras.main.width,
+            this.cameras.main.height,
+            0x000000,
+            0.5
+        ).setDepth(100);
+
+        // ✅ Cartel principal (fondo claro)
+        const panel = this.add.rectangle(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            400,
+            200,
+            0xFFFFFF
+        ).setDepth(101).setStrokeStyle(4, 0x000000);
+
+        // ✅ Texto de advertencia
+        const warningText = this.add.text(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            `No puedes picar ${this.mineral} con un pico de ${this.pico}`,
+            {
+                fontSize: "22px",
+                fill: "#000",
+                fontFamily: "Arial",
+                align: "center",
+                wordWrap: { width: 350 }
+            }
+        ).setOrigin(0.5).setDepth(102);
+
+        // ✅ Botón de cerrar ("X")
+        const closeButton = this.add.text(
+            this.cameras.main.width / 2 + 180,
+            this.cameras.main.height / 2 - 80,
+            "❌",
+            {
+                fontSize: "28px",
+                fill: "#ff0000",
+                fontFamily: "Arial",
+                fontStyle: "bold"
+            }
+        ).setOrigin(0.5).setDepth(103).setInteractive();
+
+        closeButton.on("pointerdown", () => {
+            // ✅ Restaurar controles y reanudar la escena del juego
+            const gameScene = this.scene.get('GameScene');
+            if (gameScene) {
+                this.scene.resume('GameScene'); // ✅ Reanudar el juego
+                gameScene.input.keyboard.enabled = true;
+                gameScene.input.enabled = true;
+                gameScene.moving = false;
+            }
+
+            this.scene.stop(); // Cerrar la escena de advertencia
+        });
+
+        // Evitar que se interactúe con el juego mientras el mensaje está abierto
+        this.input.keyboard.enabled = false;
+
+        // Restaurar controles al cerrar
+        this.events.on('shutdown', () => {
+            const gameScene = this.scene.get('GameScene');
+            if (gameScene) {
+                gameScene.input.keyboard.enabled = true;
+            }
+        });
     }
 }
 
@@ -2127,7 +2226,7 @@ const config = {
             debug: false
         }
     },
-    scene: [MenuScene, GameScene, PauseMenu, ArsenalMenuScene, RefineriaMenuScene, VictoryScene] // Incluir escenas
+    scene: [MenuScene, GameScene, PauseMenu, ArsenalMenuScene, RefineriaMenuScene, VictoryScene, WarningScene] // Incluir escenas
 };
 
 const game = new Phaser.Game(config);
