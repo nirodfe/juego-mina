@@ -1622,6 +1622,13 @@ class HelpScene extends Phaser.Scene {
     create() {
         console.log("📖 Pantalla de ayuda abierta");
 
+        // ✅ Obtener la escena del juego
+        const gameScene = this.scene.get('GameScene');
+        if (gameScene) {
+            this.scene.pause('GameScene'); // Pausar el juego mientras la ayuda está abierta
+            gameScene.input.keyboard.enabled = false; // Bloquear las teclas
+        }
+
         // ✅ Fondo semitransparente
         const overlay = this.add.rectangle(
             this.cameras.main.width / 2,
@@ -1768,7 +1775,14 @@ class HelpScene extends Phaser.Scene {
         ).setOrigin(0.5).setDepth(103).setInteractive();
 
         closeButton.on("pointerdown", () => {
-            this.scene.stop(); // 📌 Cerrar la escena de ayuda
+            // ✅ Restaurar controles al cerrar la ayuda
+            const gameScene = this.scene.get('GameScene');
+            if (gameScene) {
+                this.scene.resume('GameScene'); // Reanudar el juego
+                gameScene.input.keyboard.enabled = true; // Reactivar las teclas
+            }
+
+            this.scene.stop(); // Cerrar la escena de ayuda
         });
     }
 }
