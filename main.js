@@ -211,7 +211,7 @@ function mostrarNotificacion(mensaje) {
 
     setTimeout(() => {
         notification.remove();
-    }, 3000); // 🔹 Desaparece después de 3 segundos
+    }, 1500); // 🔹 Desaparece después de 3 segundos
 }
 
 function cargarPartida(userId) {
@@ -243,10 +243,6 @@ function cargarPartida(userId) {
                 gameScene.rubiCount = datos.inventario.rubi || 0;
                 gameScene.esmeraldaCount = datos.inventario.esmeralda || 0;
                 gameScene.diamanteCount = datos.inventario.diamante || 0;
-                // 🔹 Actualizar los contadores de minerales en la mochila
-                if (gameScene.actualizarContadoresMochila) {
-                    gameScene.actualizarContadoresMochila();
-                }
                 gameScene.monedas = datos.monedas || 0;
                 gameScene.picoActual = datos.picoTipo || "pico_madera";
                 gameScene.iconoPico.setTexture(gameScene.picoActual); // 🔹 Actualizar la imagen del icono del pico
@@ -404,7 +400,7 @@ class GameScene extends Phaser.Scene {
         const user = window.firebaseAuth.currentUser;
 
         // Detectar la tecla ESC para alternar entre pausa y juego
-        this.input.keyboard.on("keydown-ESC", () => {
+        this.input.keyboard.on("keydown-P", () => {
             if (this.scene.isActive("PauseMenu")) {
                 // 🔹 Si el menú de pausa ya está abierto, cerrarlo y reanudar el juego
                 this.scene.stop("PauseMenu");
@@ -604,200 +600,20 @@ class GameScene extends Phaser.Scene {
 
         this.juegoTerminado = false; // 🔹 Controla si ya se ha mostrado la pantalla de finalización
 
-        // Crear el menú de la mochila (oculto al principio)
-        this.menuContainer = this.add.container(0, 0).setVisible(false).setDepth(15); // Establecer profundidad alta para el menú
-
-        // Fondo del menú que cubre toda la pantalla visible
-        const menuBackground = this.add.rectangle(
-            0, 0,
-            this.cameras.main.width, // Ancho igual al ancho visible de la cámara
-            this.cameras.main.height, // Alto igual al alto visible de la cámara
-            0x000000,
-            0.8 // Opacidad del fondo
-        )
-            .setOrigin(0.5)
-            .setInteractive(); // Fondo interactivo para bloquear clics en el juego
-        this.menuContainer.add(menuBackground);
-
-        // Texto del título del menú (centrado en la pantalla)
-        const menuTitle = this.add.text(
-            0, // Centrado horizontalmente respecto al fondo
-            -this.cameras.main.height / 4, // Centrado verticalmente, ligeramente hacia arriba
-            'Mochila',
-            {
-                fontSize: '48px',
-                fill: '#ffffff',
-                fontStyle: 'bold'
-            }
-        ).setOrigin(0.5);
-        this.menuContainer.add(menuTitle);
-
+        // Crear contadores de minerales recolectados
         this.carbonCount = 0; // Inicializar contador de carbón recolectado
-
-        // Estadísticas dentro del menú (centradas dinámicamente)
-        this.carbonText = this.add.text(
-            0, -100, // Ligeramente por encima del centro
-            'Carbón: 0',
-            {
-                fontSize: '32px',
-                fill: '#ffffff'
-            }
-        ).setOrigin(0.5);
-
-        this.cobreCount = 0; // Contador de cobre
-
-        this.cobreText = this.add.text(
-            0, -50, // Ligeramente por debajo del centro
-            'Cobre: 0',
-            {
-                fontSize: '32px',
-                fill: '#ffffff'
-            }
-        ).setOrigin(0.5);
-
+        this.cobreCount = 0; // Inicializar contador de cobre
         this.hierroCount = 0; // Inicializar contador de hierro
-
-        this.hierroText = this.add.text(
-            0, 0, // Ajustar posición debajo de los otros textos
-            'Hierro: 0',
-            {
-                fontSize: '32px',
-                fill: '#ffffff'
-            }
-        ).setOrigin(0.5);
-
         this.plataCount = 0; // Inicializar contador de plata
-
-        this.plataText = this.add.text(
-            0, 50, // Ligeramente por debajo del texto de cobre
-            'Plata: 0',
-            {
-                fontSize: '32px',
-                fill: '#ffffff'
-            }
-        ).setOrigin(0.5);
-
         this.oroCount = 0; // Inicializar contador de oro
-
-        this.oroText = this.add.text(
-            0, 100, // Ajusta la posición vertical según sea necesario
-            'Oro: 0',
-            {
-                fontSize: '32px',
-                fill: '#ffffff'
-            }
-        ).setOrigin(0.5);
-
         this.rubiCount = 0; // Inicializar contador de rubí
-
-        this.rubiText = this.add.text(
-            0, 150, // Ajusta la posición según tu diseño
-            'Rubí: 0',
-            {
-                fontSize: '32px',
-                fill: '#ffffff'
-            }
-        ).setOrigin(0.5);
-
         this.esmeraldaCount = 0; // Inicializar contador de esmeraldas
-
-        this.esmeraldaText = this.add.text(
-            0, 200, // Ajusta la posición según tu diseño
-            'Esmeralda: 0',
-            {
-                fontSize: '32px',
-                fill: '#ffffff'
-            }
-        ).setOrigin(0.5);
-
         this.diamanteCount = 0; // Inicializar contador de diamantes
 
-        this.diamanteText = this.add.text(
-            0, 250, // Ajusta la posición según tu diseño
-            'Diamantes: 0',
-            {
-                fontSize: '32px',
-                fill: '#ffffff'
-            }
-        ).setOrigin(0.5);
-
-        // Añadir el texto de diamantes al contenedor del menú
-        this.menuContainer.add(this.diamanteText);
-
-        // Añadir el texto de esmeraldas al contenedor del menú
-        this.menuContainer.add(this.esmeraldaText);
-
-        // Añade este texto de rubí al contenedor del menú
-        this.menuContainer.add(this.rubiText);
-
-        // Añadir el textode oro al contenedor del menú
-        this.menuContainer.add(this.oroText);
-
-        // Añadir el texto de plata al contenedor del menú
-        this.menuContainer.add(this.plataText);
-
-        // Añadir el texto de hierro al contenedor del menú
-        this.menuContainer.add(this.hierroText);
-
-        // Añadir el texto de cobre al contenedor del menú
-        this.menuContainer.add(this.cobreText);
-
-        // Añadir el texto de carbón al contenedor del menú
-        this.menuContainer.add(this.carbonText);
-
-        // Guardar referencias a los textos en un objeto para acceder a ellos fácilmente
-        this.mineralTextos = {
-            carbon: this.carbonText,
-            cobre: this.cobreText,
-            hierro: this.hierroText,
-            plata: this.plataText,
-            oro: this.oroText,
-            rubi: this.rubiText,
-            esmeralda: this.esmeraldaText,
-            diamante: this.diamanteText
-        };
-
-        // Tamaño deseado del botón
-        const buttonSize = 100;
-
-        // Crear el botón de la mochila
-        const mochilaButton = this.add.image(
-            this.cameras.main.width - buttonSize / 2 - 16, // Posición en X
-            buttonSize / 2 + 16, // Posición en Y
-            'mochila' // Imagen del botón
-        )
-            .setOrigin(0.5)
-            .setInteractive({ useHandCursor: true })
-            .setDisplaySize(buttonSize, buttonSize)
-            .setScrollFactor(0)
-            .setDepth(15);
-
-        // Evento de clic en el botón de la mochila
-        mochilaButton.on('pointerdown', () => {
-            // Si el menú de la mochila ya está abierto, cerrarlo
-            if (this.menuContainer.visible) {
-                this.menuContainer.setVisible(false);
-                this.physics.world.resume();
-                this.input.keyboard.enabled = true;
-                this.cameras.main.startFollow(this.player);
-                this.input.keyboard.resetKeys();
-                this.player.setVelocity(0, 0);
-                this.moving = false;
-            } else {
-                // Abrir el menú de la mochila
-                this.actualizarContadoresMochila();
-                this.player.setVelocity(0, 0);
-                this.moving = false;
-                this.menuContainer.setPosition(
-                    this.cameras.main.scrollX + this.cameras.main.width / 2,
-                    this.cameras.main.scrollY + this.cameras.main.height / 2
-                );
-                menuBackground.setSize(this.cameras.main.width, this.cameras.main.height);
-                this.menuContainer.setVisible(true);
-                this.physics.world.pause();
-                this.input.keyboard.enabled = false;
-                this.cameras.main.stopFollow();
-                this.input.keyboard.resetKeys();
+        // ✅ Evento de teclado para abrir/cerrar la mochila con "M"
+        this.input.keyboard.on('keydown-M', () => {
+            if (!this.scene.isActive("MochilaScene")) {
+                this.scene.launch("MochilaScene"); // Abrir la escena de la mochila
             }
         });
 
@@ -1187,17 +1003,6 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    actualizarContadoresMochila() {
-        this.mineralTextos.carbon.setText(`Carbón: ${this.carbonCount}`);
-        this.mineralTextos.cobre.setText(`Cobre: ${this.cobreCount}`);
-        this.mineralTextos.hierro.setText(`Hierro: ${this.hierroCount}`);
-        this.mineralTextos.plata.setText(`Plata: ${this.plataCount}`);
-        this.mineralTextos.oro.setText(`Oro: ${this.oroCount}`);
-        this.mineralTextos.rubi.setText(`Rubí: ${this.rubiCount}`);
-        this.mineralTextos.esmeralda.setText(`Esmeralda: ${this.esmeraldaCount}`);
-        this.mineralTextos.diamante.setText(`Diamante: ${this.diamanteCount}`);
-    }
-
     update() {
         if (this.loadingContainer) {
             this.loadingContainer.setPosition(
@@ -1574,8 +1379,6 @@ class GameScene extends Phaser.Scene {
                 this.diamanteCount = (this.diamanteCount || 0) + 1;
             }
 
-            this.actualizarContadoresMochila();
-
             // ✅ Eliminar todos los sprites del bloque, excepto las escaleras
             if (block.type !== 'ladder') {
                 if (block.sprite) {
@@ -1657,6 +1460,135 @@ class GameScene extends Phaser.Scene {
         };
 
         fallStep();
+    }
+}
+
+class MochilaScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'MochilaScene' });
+    }
+
+    create() {
+        console.log("🎒 Mochila abierta");
+
+        const gameScene = this.scene.get('GameScene');
+        if (gameScene) {
+            this.scene.pause('GameScene'); // Pausar el juego
+        }
+
+        // ✅ Fondo semitransparente
+        const overlay = this.add.rectangle(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            this.cameras.main.width,
+            this.cameras.main.height,
+            0x000000,
+            0.7
+        ).setDepth(100);
+
+        // ✅ Borde de la mochila
+        const border = this.add.rectangle(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            this.cameras.main.width - 50,
+            this.cameras.main.height - 50,
+            0x5A3825
+        ).setDepth(101).setStrokeStyle(4, 0x000000);
+
+        // ✅ Panel de la mochila
+        const panel = this.add.rectangle(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            this.cameras.main.width- 100,
+            this.cameras.main.height - 100,
+            0xFFF0C9
+        ).setDepth(101).setStrokeStyle(4, 0x000000);
+
+        // ✅ Texto "Mochila"
+        this.add.text(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2 - 240,
+            "Mochila 🎒",
+            {
+                fontSize: "64px",
+                fill: "#000",
+                fontFamily: "Arial",
+                fontStyle: "bold"
+            }
+        ).setOrigin(0.5).setDepth(102);
+
+        // ✅ Contenedores de inventario (solo ejemplo, puedes mejorarlo)
+        this.add.text(
+            this.cameras.main.width / 2 - 350,
+            this.cameras.main.height / 2 - 90,
+            `Carbón: ${gameScene.carbonCount}`,
+            { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
+        ).setOrigin(0.5).setDepth(102);
+
+        this.add.text(
+            this.cameras.main.width / 2 - 350,
+            this.cameras.main.height / 2 - 30,
+            `Cobre: ${gameScene.cobreCount}`,
+            { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
+        ).setOrigin(0.5).setDepth(102);
+
+        this.add.text(
+            this.cameras.main.width / 2 - 350,
+            this.cameras.main.height / 2 + 30,
+            `Hierro: ${gameScene.hierroCount}`,
+            { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
+        ).setOrigin(0.5).setDepth(102);
+
+        this.add.text(
+            this.cameras.main.width / 2 - 350,
+            this.cameras.main.height / 2 + 90,
+            `Plata: ${gameScene.plataCount}`,
+            { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
+        ).setOrigin(0.5).setDepth(102);
+
+        this.add.text(
+            this.cameras.main.width / 2 + 350,
+            this.cameras.main.height / 2 - 90,
+            `Oro: ${gameScene.oroCount || 0}`,
+            { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
+        ).setOrigin(0.5).setDepth(102);
+
+        this.add.text(
+            this.cameras.main.width / 2 + 350,
+            this.cameras.main.height / 2 - 30,
+            `Rubí: ${gameScene.rubiCount || 0}`,
+            { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
+        ).setOrigin(0.5).setDepth(102);
+
+        this.add.text(
+            this.cameras.main.width / 2 + 350,
+            this.cameras.main.height / 2 + 30,
+            `Esmeralda: ${gameScene.esmeraldaCount || 0}`,
+            { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
+        ).setOrigin(0.5).setDepth(102);
+
+        this.add.text(
+            this.cameras.main.width / 2 + 350,
+            this.cameras.main.height / 2 + 90,
+            `Diamante: ${gameScene.diamanteCount || 0}`,
+            { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
+        ).setOrigin(0.5).setDepth(102);
+
+        // ✅ Botón de cerrar con "M"
+        this.input.keyboard.on('keydown-M', () => {
+            this.cerrarMochila();
+        });
+    }
+
+    cerrarMochila() {
+        console.log("🎒 Mochila cerrada");
+
+        const gameScene = this.scene.get('GameScene');
+        if (gameScene) {
+            this.scene.resume('GameScene'); // Reanudar el juego
+        }
+
+        this.scene.stop(); // Cerrar la mochila
     }
 }
 
@@ -2135,7 +2067,7 @@ class PauseMenu extends Phaser.Scene {
         }
 
         // 🔹 Detectar tecla ESC para cerrar el menú de pausa y reanudar el juego
-        this.input.keyboard.on("keydown-ESC", () => {
+        this.input.keyboard.on("keydown-P", () => {
             this.scene.stop();  // Cerrar el menú de pausa
             this.scene.resume("GameScene"); // Reanudar el juego
         });
@@ -2226,7 +2158,7 @@ const config = {
             debug: false
         }
     },
-    scene: [MenuScene, GameScene, PauseMenu, ArsenalMenuScene, RefineriaMenuScene, VictoryScene, WarningScene] // Incluir escenas
+    scene: [MenuScene, GameScene, PauseMenu, ArsenalMenuScene, RefineriaMenuScene, VictoryScene, WarningScene, MochilaScene] // Incluir escenas
 };
 
 const game = new Phaser.Game(config);
