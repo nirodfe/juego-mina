@@ -350,6 +350,7 @@ class GameScene extends Phaser.Scene {
         this.load.image('pico_hierro', 'assets/pico_hierro.png');
         this.load.image('pico_oro', 'assets/pico_oro.png');
         this.load.image('bloque_hierro', 'assets/bloque_hierro.png');
+        this.load.image('boton_ayuda', 'assets/boton_ayuda.png'); // Cargar el botón de ayuda
     }
 
     create() {
@@ -615,6 +616,27 @@ class GameScene extends Phaser.Scene {
             if (!this.scene.isActive("MochilaScene")) {
                 this.scene.launch("MochilaScene"); // Abrir la escena de la mochila
             }
+        });
+
+        // ✅ Tamaño del botón
+        const buttonSize = 75;
+
+        // ✅ Crear el botón de ayuda al lado de la mochila
+        const ayudaButton = this.add.image(
+            this.cameras.main.width - buttonSize / 2 - 10, // 📌 Posición en X (ajustado junto a la mochila)
+            buttonSize / 2 + 10, // 📌 Posición en Y (igual que la mochila)
+            'boton_ayuda' // 📌 Imagen del botón cargada en preload()
+        )
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true }) // Hacerlo interactivo
+            .setDisplaySize(buttonSize, buttonSize)
+            .setScrollFactor(0)
+            .setDepth(15);
+
+
+        // ✅ Evento de clic para abrir la escena de ayuda
+        ayudaButton.on('pointerdown', () => {
+            this.scene.launch('HelpScene'); // 📌 Abrir la escena de ayuda
         });
 
         // Crear el fondo semitransparente detrás del texto de coordenadas
@@ -1490,8 +1512,8 @@ class MochilaScene extends Phaser.Scene {
         const border = this.add.rectangle(
             this.cameras.main.width / 2,
             this.cameras.main.height / 2,
-            this.cameras.main.width - 50,
-            this.cameras.main.height - 50,
+            this.cameras.main.width - 375,
+            this.cameras.main.height - 75,
             0x5A3825
         ).setDepth(101).setStrokeStyle(4, 0x000000);
 
@@ -1499,7 +1521,7 @@ class MochilaScene extends Phaser.Scene {
         const panel = this.add.rectangle(
             this.cameras.main.width / 2,
             this.cameras.main.height / 2,
-            this.cameras.main.width- 100,
+            this.cameras.main.width - 400,
             this.cameras.main.height - 100,
             0xFFF0C9
         ).setDepth(101).setStrokeStyle(4, 0x000000);
@@ -1519,56 +1541,56 @@ class MochilaScene extends Phaser.Scene {
 
         // ✅ Contenedores de inventario (solo ejemplo, puedes mejorarlo)
         this.add.text(
-            this.cameras.main.width / 2 - 350,
+            this.cameras.main.width / 2 - 300,
             this.cameras.main.height / 2 - 90,
             `Carbón: ${gameScene.carbonCount}`,
             { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
         ).setOrigin(0.5).setDepth(102);
 
         this.add.text(
-            this.cameras.main.width / 2 - 350,
+            this.cameras.main.width / 2 - 300,
             this.cameras.main.height / 2 - 30,
             `Cobre: ${gameScene.cobreCount}`,
             { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
         ).setOrigin(0.5).setDepth(102);
 
         this.add.text(
-            this.cameras.main.width / 2 - 350,
+            this.cameras.main.width / 2 - 300,
             this.cameras.main.height / 2 + 30,
             `Hierro: ${gameScene.hierroCount}`,
             { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
         ).setOrigin(0.5).setDepth(102);
 
         this.add.text(
-            this.cameras.main.width / 2 - 350,
+            this.cameras.main.width / 2 - 300,
             this.cameras.main.height / 2 + 90,
             `Plata: ${gameScene.plataCount}`,
             { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
         ).setOrigin(0.5).setDepth(102);
 
         this.add.text(
-            this.cameras.main.width / 2 + 350,
+            this.cameras.main.width / 2 + 300,
             this.cameras.main.height / 2 - 90,
             `Oro: ${gameScene.oroCount || 0}`,
             { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
         ).setOrigin(0.5).setDepth(102);
 
         this.add.text(
-            this.cameras.main.width / 2 + 350,
+            this.cameras.main.width / 2 + 300,
             this.cameras.main.height / 2 - 30,
             `Rubí: ${gameScene.rubiCount || 0}`,
             { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
         ).setOrigin(0.5).setDepth(102);
 
         this.add.text(
-            this.cameras.main.width / 2 + 350,
+            this.cameras.main.width / 2 + 300,
             this.cameras.main.height / 2 + 30,
             `Esmeralda: ${gameScene.esmeraldaCount || 0}`,
             { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
         ).setOrigin(0.5).setDepth(102);
 
         this.add.text(
-            this.cameras.main.width / 2 + 350,
+            this.cameras.main.width / 2 + 300,
             this.cameras.main.height / 2 + 90,
             `Diamante: ${gameScene.diamanteCount || 0}`,
             { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
@@ -1589,6 +1611,165 @@ class MochilaScene extends Phaser.Scene {
         }
 
         this.scene.stop(); // Cerrar la mochila
+    }
+}
+
+class HelpScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'HelpScene' });
+    }
+
+    create() {
+        console.log("📖 Pantalla de ayuda abierta");
+
+        // ✅ Fondo semitransparente
+        const overlay = this.add.rectangle(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            this.cameras.main.width,
+            this.cameras.main.height,
+            0x000000,
+            0.7
+        ).setDepth(100);
+
+        // ✅ Borde de la mochila
+        const border = this.add.rectangle(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            this.cameras.main.width - 325,
+            this.cameras.main.height - 100,
+            0x5A3825
+        ).setDepth(101).setStrokeStyle(4, 0x000000);
+
+        // ✅ Panel de la mochila
+        const panel = this.add.rectangle(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            this.cameras.main.width - 350,
+            this.cameras.main.height - 125,
+            0xFFF0C9
+        ).setDepth(101).setStrokeStyle(4, 0x000000);
+
+        // ✅ Título "Ayuda"
+        this.add.text(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2 - 250,
+            "📖 AYUDA",
+            {
+                fontSize: "48px",
+                fill: "#000",
+                fontFamily: "Arial",
+                fontStyle: "bold",
+                align: "center"
+            }
+        ).setOrigin(0.5).setDepth(102);
+
+        // ✅ Sección: Objetivo
+        this.add.text(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2 - 190,
+            "🎯 OBJETIVO",
+            {
+                fontSize: "32px",
+                fill: "#000",
+                fontFamily: "Arial",
+                fontStyle: "bold"
+            }
+        ).setOrigin(0.5).setDepth(102);
+
+        this.add.text(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2 - 145,
+            "Extrae todos los minerales del mapa para ganar.\nCuidado con las caídas, ya que perderás vida.",
+            {
+                fontSize: "24px",
+                fill: "#333",
+                fontFamily: "Arial",
+                align: "center",
+                wordWrap: { width: 600 }
+            }
+        ).setOrigin(0.5).setDepth(102);
+
+        // ✅ Sección: Controles
+        this.add.text(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2 - 90,
+            "🎮 CONTROLES",
+            {
+                fontSize: "32px",
+                fill: "#000",
+                fontFamily: "Arial",
+                fontStyle: "bold"
+            }
+        ).setOrigin(0.5).setDepth(102);
+
+        const controles = [
+            "Flechas: Moverse",
+            "Espacio: Colocar escaleras o entrar a la refinería y al arsenal",
+            "Tecla M: Abrir mochila",
+            "Tecla P: Pausar el juego"
+        ];
+
+        controles.forEach((texto, index) => {
+            this.add.text(
+                this.cameras.main.width / 2,
+                this.cameras.main.height / 2 - 50 + index * 40,
+                texto,
+                {
+                    fontSize: "24px",
+                    fill: "#333",
+                    fontFamily: "Arial"
+                }
+            ).setOrigin(0.5).setDepth(102);
+        });
+
+        // ✅ Sección: Tiendas
+        this.add.text(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2 + 130,
+            "🏬 TIENDAS",
+            {
+                fontSize: "32px",
+                fill: "#000",
+                fontFamily: "Arial",
+                fontStyle: "bold"
+            }
+        ).setOrigin(0.5).setDepth(102);
+
+        const tiendas = [
+            "🛠️ Arsenal: Comprar picos y escaleras",
+            "💰 Refinería: Vender minerales por monedas"
+        ];
+
+        tiendas.forEach((texto, index) => {
+            this.add.text(
+                this.cameras.main.width / 2,
+                this.cameras.main.height / 2 + 170 + index * 40,
+                texto,
+                {
+                    fontSize: "24px",
+                    fill: "#333",
+                    fontFamily: "Arial"
+                }
+            ).setOrigin(0.5).setDepth(102);
+        });
+
+        // ✅ Cerrar con tecla "X"
+        const closeButton = this.add.text(
+            this.cameras.main.width / 2 + 570,
+            this.cameras.main.height / 2 - 260,
+            "❌",
+            {
+                fontSize: "28px",
+                fill: "#ff0000",
+                fontFamily: "Arial",
+                fontStyle: "bold"
+            }
+        ).setOrigin(0.5).setDepth(103).setInteractive();
+
+        closeButton.on("pointerdown", () => {
+            this.scene.stop(); // 📌 Cerrar la escena de ayuda
+        });
     }
 }
 
@@ -2158,7 +2339,7 @@ const config = {
             debug: false
         }
     },
-    scene: [MenuScene, GameScene, PauseMenu, ArsenalMenuScene, RefineriaMenuScene, VictoryScene, WarningScene, MochilaScene] // Incluir escenas
+    scene: [MenuScene, GameScene, PauseMenu, ArsenalMenuScene, RefineriaMenuScene, VictoryScene, WarningScene, MochilaScene, HelpScene] // Incluir escenas
 };
 
 const game = new Phaser.Game(config);
