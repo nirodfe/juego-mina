@@ -18,18 +18,53 @@ class MenuScene extends Phaser.Scene {
             { fontSize: '48px', fill: '#000', fontStyle: 'bold' })
             .setOrigin(0.5);
 
-        this.playButton = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2 + 30, 'JUGAR',
-            { fontSize: '32px', fill: '#000', fontStyle: 'bold' })
-            .setOrigin(0.5)
-            .setInteractive()
-            .on("pointerdown", () => {
-                if (game.scene.isActive("GameScene")) {
-                    game.scene.stop("GameScene"); // 🔹 Detener la escena anterior para limpiar todo
+        // ✅ Botón "Invitado"
+        this.botonInvitado = this.crearBotonMenu(
+            250, 55,
+            this.cameras.main.width / 2, this.cameras.main.height / 2,
+            "Jugar como invitado",
+            () => {
+                const confirmPlay = window.confirm("Estás jugando como invitado. Tu progreso NO se guardará. ¿Quieres continuar?");
+
+                if (confirmPlay) {
+                    console.log("🎮 Iniciando partida invitado...");
+                    this.scene.start("GameScene", { modo: "nueva" });
                 }
-                game.scene.start("GameScene"); // 🔹 Iniciar la escena desde cero
-            })
-            .on('pointerover', () => this.playButton.setStyle({ fill: '#8b4513' }))
-            .on('pointerout', () => this.playButton.setStyle({ fill: '#000' }));
+            }
+        ).setVisible(false);;
+
+        // ✅ Botón "Nueva Iniciar"
+        this.botonIniciar = this.crearBotonMenu(
+            250, 55,
+            this.cameras.main.width / 2, this.cameras.main.height / 2,
+            "Nueva partida",
+            () => {
+                console.log("🎮 Iniciando partida nueva...");
+                this.scene.start("GameScene", { modo: "nueva" });
+            }
+        ).setVisible(false);;
+
+        // ✅ Botón "Continuar"
+        this.botonContinuar = this.crearBotonMenu(
+            250, 55,
+            this.cameras.main.width / 2 - 160, this.cameras.main.height / 2,
+            "Continuar partida",
+            () => {
+                console.log("🎮 Continuando partida...");
+                this.scene.start("GameScene", { modo: "continuar" });
+            }
+        ).setVisible(false);;
+
+        // ✅ Botón "Nueva partida"
+        this.botonNueva = this.crearBotonMenu(
+            250, 55,
+            this.cameras.main.width / 2 + 160, this.cameras.main.height / 2,
+            "Nueva partida",
+            () => {
+                console.log("🎮 Iniciando partida nueva...");
+                this.scene.start("GameScene", { modo: "sobreescribir" });
+            }
+        ).setVisible(false);;
 
         // 🔹 Crear el botón de Google en la esquina superior derecha
         this.googleButtonContainer = this.add.container(this.cameras.main.width - 150, 50).setSize(200, 50);
@@ -63,25 +98,37 @@ class MenuScene extends Phaser.Scene {
                 this.loginText.setText("Cerrar sesión");
                 buttonBackground.off("pointerdown");
                 buttonBackground.on("pointerdown", () => logoutUser());
-                // ✅ Usuario SÍ autenticado: Cambiar a "JUGAR"
-                this.playButton.setText("JUGAR");
-                this.playButton.off("pointerdown");
-                this.playButton.on("pointerdown", () => this.scene.start('GameScene'));
+                // ✅ Usuario SÍ autenticado: Cambiar a "Continuar partida"
+
+                // ✅ Verificar si hay una partida guardada en Firebase
+                window.firebaseDB.collection("partidas").doc(user.uid).get().then((doc) => {
+                    if (doc.exists) {
+                        console.log("✅ Partida guardada encontrada:", doc.data());
+
+                        this.botonInvitado.setVisible(false);
+                        this.botonIniciar.setVisible(false);
+                        this.botonContinuar.setVisible(true);
+                        this.botonNueva.setVisible(true);
+                    } else {
+                        console.log("⚠ No hay partida guardada.");
+                        this.botonInvitado.setVisible(false);
+                        this.botonIniciar.setVisible(true);
+                        this.botonContinuar.setVisible(false);
+                        this.botonNueva.setVisible(false);
+                    }
+                }).catch((error) => {
+                    console.error("❌ Error al verificar partida guardada:", error);
+                });
             } else {
                 // ❌ No autenticado: Cambiar a "Iniciar sesión"
                 this.loginText.setText("Iniciar sesión");
                 buttonBackground.off("pointerdown");
                 buttonBackground.on("pointerdown", () => loginWithGoogle());
                 // ❌ Usuario NO autenticado: Mostrar "Jugar como invitado"
-                this.playButton.setText("Jugar como invitado");
-                this.playButton.off("pointerdown");
-                this.playButton.on("pointerdown", () => {
-                    const confirmPlay = window.confirm("Estás jugando como invitado. Tu progreso NO se guardará. ¿Quieres continuar?");
-
-                    if (confirmPlay) {
-                        this.scene.start('GameScene');
-                    }
-                });
+                this.botonInvitado.setVisible(true);
+                this.botonIniciar.setVisible(false);
+                this.botonContinuar.setVisible(false);
+                this.botonNueva.setVisible(false);
             }
         });
 
@@ -92,6 +139,48 @@ class MenuScene extends Phaser.Scene {
             'Hecho por: Nicolás Rodríguez Ferrándiz',
             { fontSize: '24px', fill: '#f5deb3', fontStyle: 'bold' } // Color crema y estilo en negrita
         ).setOrigin(0.5);
+    }
+
+    crearBotonMenu(ancho, alto, posX, posY, texto, callback) {
+        // ✅ Crear el fondo del botón (rectángulo con bordes redondeados)
+        const buttonBackground = this.add.rectangle(
+            0, 0, ancho, alto, 0x8B4513 // 📌 Color marrón oscuro
+        )
+            .setOrigin(0.5)
+            .setStrokeStyle(4, 0x5A3825) // 📌 Borde oscuro
+            .setInteractive({ useHandCursor: true }); // 📌 Hacerlo interactivo
+
+        // ✅ Crear el texto del botón
+        const buttonText = this.add.text(
+            0, 0, texto,
+            {
+                fontSize: "24px",
+                fill: "#FFFFFF",
+                fontFamily: "Arial",
+                fontStyle: "bold"
+            }
+        ).setOrigin(0.5);
+
+        // ✅ Hacer que el botón responda a clics
+        buttonBackground.on("pointerdown", () => {
+            console.log(`🎮 Botón "${texto}" presionado`);
+            if (callback) {
+                callback(); // 📌 Ejecutar la función asociada al botón
+            }
+        });
+
+        // ✅ Efectos visuales al pasar el ratón por encima
+        buttonBackground.on("pointerover", () => {
+            buttonBackground.setFillStyle(0xA0522D); // 📌 Color más claro al pasar el mouse
+        });
+        buttonBackground.on("pointerout", () => {
+            buttonBackground.setFillStyle(0x8B4513); // 📌 Color original al salir
+        });
+
+        // ✅ Crear un contenedor y añadir los elementos dentro
+        const buttonContainer = this.add.container(posX, posY, [buttonBackground, buttonText]);
+
+        return buttonContainer; // 📌 Retornamos el contenedor
     }
 }
 
@@ -130,6 +219,7 @@ function guardarPartida() {
         setTimeout(guardarPartida, 500); // Reintentar después de 500ms
         return;
     }
+    const notificacion = mostrarNotificacion("💾 Tu partida se está guardando en la nube. Por favor, espera...");
 
     const user = window.firebaseAuth.currentUser;
 
@@ -187,14 +277,15 @@ function guardarPartida() {
     window.firebaseDB.collection("partidas").doc(user.uid).set(datosPartida)
         .then(() => {
             console.log("✅ Partida guardada correctamente.");
-            mostrarNotificacion("✅ Tu partida ha sido guardada en la nube.");
+            notificacion.remove();
+            mostrarNotificacion("✅ Tu partida ha sido guardada en la nube.", true);
         })
         .catch((error) => {
             console.error("❌ Error al guardar partida:", error);
         });
 }
 
-function mostrarNotificacion(mensaje) {
+function mostrarNotificacion(mensaje, autoEliminar = false) {
     const notification = document.createElement("div");
     notification.innerText = mensaje;
     notification.style.position = "fixed";
@@ -208,10 +299,14 @@ function mostrarNotificacion(mensaje) {
     notification.style.fontSize = "16px";
     notification.style.zIndex = "1000";
     document.body.appendChild(notification);
+    
+    if (autoEliminar === true) {
+        setTimeout(() => {
+            notification.remove();
+        }, 1000); // 🔹 Desaparece después de 3 segundos
+    }
 
-    setTimeout(() => {
-        notification.remove();
-    }, 1500); // 🔹 Desaparece después de 3 segundos
+    return notification;
 }
 
 function cargarPartida(userId) {
@@ -312,6 +407,11 @@ class GameScene extends Phaser.Scene {
         this.isLadderMovement = false; // Indicará si el movimiento actual es con escalera
     }
 
+    init(data) {
+        this.modoInicio = data.modo;
+        console.log("🔄 Iniciando GameScene con modo de inicio:", this.modoInicio);
+    }
+
     preload() {
         this.load.image('personaje', 'assets/personaje.png'); // Cargar la imagen del personaje
         this.load.image('nube1', 'assets/nube1.png');
@@ -396,9 +496,6 @@ class GameScene extends Phaser.Scene {
 
         // 🔹 Asegurar que el panel esté al frente de todo
         this.loadingContainer.setDepth(1000);
-
-        // Cargar partida
-        const user = window.firebaseAuth.currentUser;
 
         // Detectar la tecla ESC para alternar entre pausa y juego
         this.input.keyboard.on("keydown-P", () => {
@@ -705,12 +802,18 @@ class GameScene extends Phaser.Scene {
         });
 
         // Cargar partida si el usuario está autenticado
-        if (user) {
-            console.log("🔹 Usuario autenticado, cargando partida...");
-            this.loadingContainer.setVisible(true);
-            cargarPartida(user.uid);
+        if (this.modoInicio === "continuar") {
+            const user = window.firebaseAuth.currentUser;
+            if (user) {
+                console.log("🔹 Usuario autenticado, cargando partida...");
+                this.loadingContainer.setVisible(true);
+                cargarPartida(user.uid);
+            } else {
+                console.log("ℹ Usuario no autenticado, iniciando nueva partida.");
+                this.generateRandomMaterial();
+            }
         } else {
-            console.log("ℹ Usuario no autenticado, iniciando nueva partida.");
+            console.log("🆕 Iniciando nueva partida...");
             this.generateRandomMaterial();
         }
     }
@@ -1392,13 +1495,13 @@ class GameScene extends Phaser.Scene {
             } else if (blockType === 'plata') {
                 this.plataCount += 1;
             } else if (blockType === 'oro') {
-                this.oroCount = (this.oroCount || 0) + 1;
+                this.oroCount += 1;
             } else if (blockType === 'rubi') {
-                this.rubiCount = (this.rubiCount || 0) + 1;
+                this.rubiCount += 1;
             } else if (blockType === 'esmeralda') {
                 this.esmeraldaCount += 1;
             } else if (blockType === 'diamante') {
-                this.diamanteCount = (this.diamanteCount || 0) + 1;
+                this.diamanteCount += 1;
             }
 
             // ✅ Eliminar todos los sprites del bloque, excepto las escaleras
@@ -2257,11 +2360,19 @@ class PauseMenu extends Phaser.Scene {
                 .setOrigin(0.5)
                 .setInteractive()
                 .on("pointerdown", () => {
-                    guardarPartida();
+                    const gameScene = this.scene.get('GameScene');
+                    if (gameScene.modoInicio === "sobreescribir") {
+                        const confirmOverride = window.confirm("Esto sobreescribirá tu partida anterior. ¿Quieres continuar?");
+                        if (confirmOverride) {
+                            guardarPartida();
+                        }
+                    } else {
+                        guardarPartida();
+                    }
                 });
         }
 
-        // 🔹 Detectar tecla ESC para cerrar el menú de pausa y reanudar el juego
+        // 🔹 Detectar tecla P para cerrar el menú de pausa y reanudar el juego
         this.input.keyboard.on("keydown-P", () => {
             this.scene.stop();  // Cerrar el menú de pausa
             this.scene.resume("GameScene"); // Reanudar el juego
