@@ -303,7 +303,7 @@ function mostrarNotificacion(mensaje, autoEliminar = false) {
     if (autoEliminar === true) {
         setTimeout(() => {
             notification.remove();
-        }, 1000); // 🔹 Desaparece después de 3 segundos
+        }, 1500); // 🔹 Desaparece después de 3 segundos
     }
 
     return notification;
@@ -405,6 +405,19 @@ class GameScene extends Phaser.Scene {
         this.currentTween = null;
         this.teclasHabilitadas = true; // Asegurar que las teclas están activas después de reiniciar        
         this.isLadderMovement = false; // Indicará si el movimiento actual es con escalera
+
+        this.logros = {
+            MINERO_NOCTURNO: { titulo: "Minero Nocturno 🌙", descripcion: "Juega exactamente a las 00:00", completado: false },
+            CASI_ME_MATO: { titulo: "Casi me mato 💀", descripcion: "Sobrevive a una caída y quédate con 1 de vida", completado: false },
+            OFERTA_FANTASMA: { titulo: "Oferta Fantasma 👻", descripcion: "Intenta vender un mineral que no tienes", completado: false },
+            EL_ULTIMO_GOLPE: { titulo: "El Último Golpe 🔨", descripcion: "Pica el último mineral del mapa", completado: false },
+            REGRESO_DEL_INFIERNO: { titulo: "Regreso del Inframundo 🌋", descripcion: "Baja hasta la última capa y vuelve a la superficie", completado: false },
+            SIN_SALIDA: { titulo: "Sin Salida 🚧", descripcion: "Quedarte sin escaleras y no poder salir", completado: false },
+            MODO_ZEN: { titulo: "Modo Zen 🧘‍♂️", descripcion: "Pasa 5 minutos sin picar ningún bloque", completado: false },
+            PRIMER_DESTELLO: { titulo: "Primer Destello ✨", descripcion: "Pica tu primer mineral raro", completado: false },
+            COMERCIANTE_MAYORISTA: { titulo: "Comerciante Mayorista 🏪", descripcion: "Vende más de 500 minerales en la refinería", completado: false },
+            ARQUITECTO_MINERO: { titulo: "El Arquitecto Minero 🏗️", descripcion: "Coloca más de 250 escaleras en una partida", completado: false }
+        };
     }
 
     init(data) {
@@ -834,6 +847,14 @@ class GameScene extends Phaser.Scene {
             this.generateRandomMaterial();
         }
     }
+
+    actualizarLogro(key) {
+        if (this.logros[key] && !this.logros[key].completado) {
+            this.logros[key].completado = true;
+            console.log(`🏆 Logro desbloqueado: ${this.logros[key].titulo}`);
+            mostrarNotificacion(`🏆 Logro desbloqueado: ${this.logros[key].titulo}`, true);
+        }
+    }    
 
     generateRandomMaterial() {
         const tileSize = 128;
@@ -1918,6 +1939,7 @@ class LogrosScene extends Phaser.Scene {
         if (gameScene) {
             this.scene.pause('GameScene'); // Pausar el juego mientras la ayuda está abierta
             gameScene.input.keyboard.enabled = false; // Bloquear las teclas
+            this.logros = gameScene.logros; // 📌 Obtener referencia a los logros de GameScene
         }
 
         // ✅ Fondo semitransparente para la pantalla de logros
@@ -1962,27 +1984,14 @@ class LogrosScene extends Phaser.Scene {
             }
         ).setOrigin(0.5).setDepth(102);
 
-        // Lista de logros (Ejemplo con 10 logros, 5 en cada columna)
-        const logros = [
-            { titulo: "Minero Nocturno 🌙", descripcion: "Juega exactamente a las 00:00", completado: false },
-            { titulo: "Casi me mato 💀", descripcion: "Sobrevive a una caída y quédate con 1 de vida", completado: true },
-            { titulo: "Oferta Fantasma 👻", descripcion: "Intenta vender un mineral que no tienes", completado: false },
-            { titulo: "El Último Golpe 🔨", descripcion: "Pica el último mineral del mapa", completado: true },
-            { titulo: "Regreso del Inframundo 🌋", descripcion: "Baja hasta la última capa y vuelve a la superficie", completado: false },
-            { titulo: "Sin Salida 🚧", descripcion: "Quedarte sin escaleras y no poder salir", completado: true },
-            { titulo: "Modo Zen 🧘‍♂️", descripcion: "Pasa 5 minutos sin picar ningún bloque", completado: false },
-            { titulo: "Primer Destello ✨", descripcion: "Pica tu primer mineral raro", completado: true },
-            { titulo: "Comerciante Mayorista 🏪", descripcion: "Vende más de 500 minerales en la refinería", completado: false },
-            { titulo: "El Arquitecto Minero 🏗️", descripcion: "Coloca más de 250 escaleras en una partida", completado: true }
-        ];
-
         // ✅ Mostrar los logros en dos columnas
+        const logrosArray = Object.keys(this.logros).map(key => ({ key, ...this.logros[key] }));
         const startX = this.cameras.main.width / 2 - 500;
         const startY = this.cameras.main.height / 2 - 160;
         const columnSpacing = 600;
         const rowSpacing = 80;
 
-        logros.forEach((logro, index) => {
+        logrosArray .forEach((logro, index) => {
             const col = index % 2;
             const row = Math.floor(index / 2);
             const x = startX + col * columnSpacing;
