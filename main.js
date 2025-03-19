@@ -1216,7 +1216,6 @@ class GameScene extends Phaser.Scene {
 
             // 🔹 Si la pantalla de carga ya no es visible, eliminarla del update
             if (!this.loadingContainer.visible) {
-                console.log("✅ Pantalla de carga eliminada del update.");
                 this.loadingContainer.destroy();
                 this.loadingContainer = null;
             }
