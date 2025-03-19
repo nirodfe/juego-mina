@@ -374,9 +374,7 @@ function cargarPartida(userId) {
 
                 // 🔹 Actualizar la UI
                 gameScene.contadorEscaleras.setText(gameScene.cantidadEscaleras);
-                gameScene.healthBar.clear()
-                    .fillStyle(0x00ff00, 1)
-                    .fillRoundedRect(52, 42, (gameScene.health / 100) * 200, 12, 6);
+                gameScene.updateHealthBar(); // Actualizar la barra de vida
 
                 // 🔹 Aplicar el gridState sobre el mundo generado aleatoriamente
                 if (datos.gridState) {
@@ -1098,7 +1096,7 @@ class GameScene extends Phaser.Scene {
 
         // Dibujar la nueva barra con la vida actual
         this.healthBar.fillStyle(color, 1)
-            .fillRoundedRect(22, 22, (this.health / 100) * 200, 12, 6); // Ancho proporcional a la vida
+            .fillRoundedRect(52, 42, (this.health / 100) * 200, 12, 6); // Ancho proporcional a la vida
     }
 
     takeDamage(damage) {
@@ -1114,13 +1112,7 @@ class GameScene extends Phaser.Scene {
             duration: 500, // Tiempo de la animación (en ms)
             ease: 'Linear',
             onUpdate: () => {
-                let color = 0x00ff00; // Verde
-                if (this.health <= 60) color = 0xffff00; // Amarillo
-                if (this.health <= 30) color = 0xff0000; // Rojo
-
-                this.healthBar.clear()
-                    .fillStyle(color, 1)
-                    .fillRoundedRect(52, 42, (this.health / 100) * 200, 12, 6);
+                this.updateHealthBar(); // Actualizar la barra de vida
             },
             onComplete: () => {
                 if (this.health <= 0) {
@@ -1151,8 +1143,8 @@ class GameScene extends Phaser.Scene {
             onComplete: () => screenFlash.destroy()
         });
 
-        // 🕒 Reiniciar después de 3 segundos
-        this.time.delayedCall(1000, () => {
+        // 🕒 Reiniciar después de 1,5 segundos
+        this.time.delayedCall(1500, () => {
             console.log("🔄 Reiniciando...");
             this.resetGame();
         }, [], this);
@@ -1160,9 +1152,7 @@ class GameScene extends Phaser.Scene {
 
     resetGame() {
         this.health = 100;
-        this.healthBar.clear()
-            .fillStyle(0x00ff00, 1)
-            .fillRoundedRect(22, 42, 200, 12, 6);
+        this.updateHealthBar(); // Actualizar la barra de vida
 
         this.player.setPosition(8 * this.tileSize, 2 * this.tileSize); // Reiniciar posición del jugador
         this.input.keyboard.enabled = true; // Reactivar controles
@@ -1214,7 +1204,7 @@ class GameScene extends Phaser.Scene {
         // ✅ Comprobar si han pasado 5 minutos desde el último minado
         const tiempoTranscurrido = ahora - this.ultimoMinado; // 📌 Diferencia de tiempo en milisegundos
 
-        if (tiempoTranscurrido >= 5000) { // 📌 10 minutos = 600,000 ms
+        if (tiempoTranscurrido >= 600000) { // 📌 10 minutos = 600,000 ms
             this.actualizarLogro(this.logros.MODO_ZEN);
         }
 
