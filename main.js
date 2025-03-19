@@ -299,7 +299,7 @@ function mostrarNotificacion(mensaje, autoEliminar = false) {
     notification.style.fontSize = "16px";
     notification.style.zIndex = "1000";
     document.body.appendChild(notification);
-    
+
     if (autoEliminar === true) {
         setTimeout(() => {
             notification.remove();
@@ -451,6 +451,7 @@ class GameScene extends Phaser.Scene {
         this.load.image('pico_oro', 'assets/pico_oro.png');
         this.load.image('bloque_hierro', 'assets/bloque_hierro.png');
         this.load.image('boton_ayuda', 'assets/boton_ayuda.png'); // Cargar el botón de ayuda
+        this.load.image('boton_logros', 'assets/boton_logros.png'); // 📌 Asegúrate de que la ruta es correcta
     }
 
     create() {
@@ -715,25 +716,41 @@ class GameScene extends Phaser.Scene {
             }
         });
 
-        // ✅ Tamaño del botón
+        // ✅ Tamaño de los botones
         const buttonSize = 75;
 
-        // ✅ Crear el botón de ayuda al lado de la mochila
-        const ayudaButton = this.add.image(
-            this.cameras.main.width - buttonSize / 2 - 10, // 📌 Posición en X (ajustado junto a la mochila)
-            buttonSize / 2 + 10, // 📌 Posición en Y (igual que la mochila)
-            'boton_ayuda' // 📌 Imagen del botón cargada en preload()
+        // ✅ Botón de ayuda en la interfaz del juego
+        this.botonAyuda = this.add.image(
+            this.cameras.main.width - buttonSize / 2 - 10, // 📌 Derecha de la pantalla
+            buttonSize / 2 + 10, // 📌 Arriba de la pantalla
+            'boton_ayuda'
         )
             .setOrigin(0.5)
-            .setInteractive({ useHandCursor: true }) // Hacerlo interactivo
+            .setInteractive({ useHandCursor: true })
             .setDisplaySize(buttonSize, buttonSize)
-            .setScrollFactor(0)
+            .setScrollFactor(0) // 📌 Fijarlo en la interfaz
             .setDepth(15);
 
+        this.botonAyuda.on("pointerdown", () => {
+            console.log("📖 Abriendo pantalla de ayuda...");
+            this.scene.launch("HelpScene");
+        });
 
-        // ✅ Evento de clic para abrir la escena de ayuda
-        ayudaButton.on('pointerdown', () => {
-            this.scene.launch('HelpScene'); // 📌 Abrir la escena de ayuda
+        // ✅ Botón de logros (colocado a la izquierda del de ayuda)
+        this.botonLogros = this.add.image(
+            this.botonAyuda.x - buttonSize - 10, // 📌 Justo a la izquierda del botón de ayuda
+            this.botonAyuda.y, // 📌 Misma altura
+            'boton_logros'
+        )
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true })
+            .setDisplaySize(buttonSize, buttonSize)
+            .setScrollFactor(0) // 📌 Fijarlo en la interfaz
+            .setDepth(15);
+
+        this.botonLogros.on("pointerdown", () => {
+            console.log("🏆 Abriendo pantalla de logros...");
+            this.scene.launch("LogrosScene");
         });
 
         // Crear el fondo semitransparente detrás del texto de coordenadas
@@ -1742,7 +1759,7 @@ class HelpScene extends Phaser.Scene {
             0.7
         ).setDepth(100);
 
-        // ✅ Borde de la mochila
+        // ✅ Borde de la ayuda
         const border = this.add.rectangle(
             this.cameras.main.width / 2,
             this.cameras.main.height / 2,
@@ -1751,7 +1768,7 @@ class HelpScene extends Phaser.Scene {
             0x5A3825
         ).setDepth(101).setStrokeStyle(4, 0x000000);
 
-        // ✅ Panel de la mochila
+        // ✅ Panel de la ayuda
         const panel = this.add.rectangle(
             this.cameras.main.width / 2,
             this.cameras.main.height / 2,
@@ -1879,6 +1896,152 @@ class HelpScene extends Phaser.Scene {
 
         closeButton.on("pointerdown", () => {
             // ✅ Restaurar controles al cerrar la ayuda
+            const gameScene = this.scene.get('GameScene');
+            if (gameScene) {
+                this.scene.resume('GameScene'); // Reanudar el juego
+                gameScene.input.keyboard.enabled = true; // Reactivar las teclas
+            }
+
+            this.scene.stop(); // Cerrar la escena de ayuda
+        });
+    }
+}
+
+class LogrosScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'LogrosScene' });
+    }
+
+    create() {
+        // ✅ Obtener la escena del juego
+        const gameScene = this.scene.get('GameScene');
+        if (gameScene) {
+            this.scene.pause('GameScene'); // Pausar el juego mientras la ayuda está abierta
+            gameScene.input.keyboard.enabled = false; // Bloquear las teclas
+        }
+
+        // ✅ Fondo semitransparente para la pantalla de logros
+        const overlay = this.add.rectangle(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            this.cameras.main.width,
+            this.cameras.main.height,
+            0x000000,
+            0.7
+        ).setDepth(100);
+
+        // ✅ Borde de la ayuda
+        const border = this.add.rectangle(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            this.cameras.main.width - 325,
+            this.cameras.main.height - 100,
+            0x5A3825
+        ).setDepth(101).setStrokeStyle(4, 0x000000);
+
+        // ✅ Panel de la ayuda
+        const panel = this.add.rectangle(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            this.cameras.main.width - 350,
+            this.cameras.main.height - 125,
+            0xFFF0C9
+        ).setDepth(101).setStrokeStyle(4, 0x000000);
+
+        // ✅ Título "Logros"
+        this.add.text(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2 - 250,
+            "🏆 LOGROS",
+            {
+                fontSize: "40px",
+                fill: "#000",
+                fontFamily: "Arial",
+                fontStyle: "bold",
+                align: "center"
+            }
+        ).setOrigin(0.5).setDepth(102);
+
+        // Lista de logros (Ejemplo con 10 logros, 5 en cada columna)
+        const logros = [
+            { titulo: "Minero Nocturno 🌙", descripcion: "Juega exactamente a las 00:00", completado: false },
+            { titulo: "Casi me mato 💀", descripcion: "Sobrevive a una caída y quédate con 1 de vida", completado: true },
+            { titulo: "Oferta Fantasma 👻", descripcion: "Intenta vender un mineral que no tienes", completado: false },
+            { titulo: "El Último Golpe 🔨", descripcion: "Pica el último mineral del mapa", completado: true },
+            { titulo: "Regreso del Inframundo 🌋", descripcion: "Baja hasta la última capa y vuelve a la superficie", completado: false },
+            { titulo: "Sin Salida 🚧", descripcion: "Quedarte sin escaleras y no poder salir", completado: true },
+            { titulo: "Modo Zen 🧘‍♂️", descripcion: "Pasa 5 minutos sin picar ningún bloque", completado: false },
+            { titulo: "Primer Destello ✨", descripcion: "Pica tu primer mineral raro", completado: true },
+            { titulo: "Comerciante Mayorista 🏪", descripcion: "Vende más de 500 minerales en la refinería", completado: false },
+            { titulo: "El Arquitecto Minero 🏗️", descripcion: "Coloca más de 250 escaleras en una partida", completado: true }
+        ];
+
+        // ✅ Mostrar los logros en dos columnas
+        const startX = this.cameras.main.width / 2 - 500;
+        const startY = this.cameras.main.height / 2 - 160;
+        const columnSpacing = 600;
+        const rowSpacing = 80;
+
+        logros.forEach((logro, index) => {
+            const col = index % 2;
+            const row = Math.floor(index / 2);
+            const x = startX + col * columnSpacing;
+            const y = startY + row * rowSpacing;
+
+            // Icono de logro (check o cruz)
+            this.add.text(
+                x - 30,
+                y,
+                logro.completado ? "✔" : "❌",
+                {
+                    fontSize: "30px",
+                    fill: logro.completado ? "#28a745" : "#dc3545", // Verde para completado, rojo para no completado
+                    fontFamily: "Arial",
+                    fontStyle: "bold"
+                }
+            ).setOrigin(0.5).setDepth(102);
+
+            // Título del logro
+            this.add.text(
+                x + 10,
+                y,
+                logro.titulo,
+                {
+                    fontSize: "24px",
+                    fill: "#000",
+                    fontFamily: "Arial",
+                    fontStyle: "bold"
+                }
+            ).setOrigin(0, 0.5).setDepth(102);
+
+            // Descripción del logro (oculta si no está completado)
+            this.add.text(
+                x + 10,
+                y + 20,
+                logro.completado ? logro.descripcion : "???",
+                {
+                    fontSize: "20px",
+                    fill: "#444",
+                    fontFamily: "Arial"
+                }
+            ).setOrigin(0, 0.5).setDepth(102);
+        });
+
+        // ✅ Cerrar con tecla "X"
+        const closeButton = this.add.text(
+            this.cameras.main.width / 2 + 570,
+            this.cameras.main.height / 2 - 260,
+            "❌",
+            {
+                fontSize: "28px",
+                fill: "#ff0000",
+                fontFamily: "Arial",
+                fontStyle: "bold"
+            }
+        ).setOrigin(0.5).setDepth(103).setInteractive();
+
+        closeButton.on("pointerdown", () => {
+            // ✅ Restaurar controles al cerrar la logros
             const gameScene = this.scene.get('GameScene');
             if (gameScene) {
                 this.scene.resume('GameScene'); // Reanudar el juego
@@ -2464,7 +2627,7 @@ const config = {
             debug: false
         }
     },
-    scene: [MenuScene, GameScene, PauseMenu, ArsenalMenuScene, RefineriaMenuScene, VictoryScene, WarningScene, MochilaScene, HelpScene] // Incluir escenas
+    scene: [MenuScene, GameScene, PauseMenu, ArsenalMenuScene, RefineriaMenuScene, VictoryScene, WarningScene, MochilaScene, HelpScene, LogrosScene] // Incluir escenas
 };
 
 const game = new Phaser.Game(config);
