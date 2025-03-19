@@ -1024,37 +1024,66 @@ class GameScene extends Phaser.Scene {
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
                     } else if (this.grid[x][y].type === 'cobre') {
-                        // Dibujar bloque de cobre
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'cobre')
+                        // Dibujar fondo de piedra
+                        this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+                        // Dibujar capa de carbón encima
+                        this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'cobre')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
                     } else if (this.grid[x][y].type === 'hierro') {
-                        // Dibujar bloque de hierro
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'hierro')
+                        // Dibujar fondo de piedra
+                        this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+                        // Dibujar capa de carbón encima
+                        this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'hierro')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
                     } else if (this.grid[x][y].type === 'plata') {
-                        // Dibujar bloque de plata
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'plata')
+                        // Dibujar fondo de piedra
+                        this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+                        // Dibujar capa de carbón encima
+                        this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'plata')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
                     } else if (this.grid[x][y].type === 'oro') {
-                        // Dibujar bloque de oro
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'oro')
+                        // Dibujar fondo de piedra
+                        this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+                        // Dibujar capa de carbón encima
+                        this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'oro')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
                     } else if (this.grid[x][y].type === 'rubi') { // Nueva lógica para el rubí
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'rubi')
+                        // Dibujar fondo de piedra
+                        this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+                        // Dibujar capa de carbón encima
+                        this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'rubi')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
                     } else if (this.grid[x][y].type === 'esmeralda') {
-                        // Dibujar bloque de esmeralda
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'esmeralda')
+                        // Dibujar fondo de piedra
+                        this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+                        // Dibujar capa de carbón encima
+                        this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'esmeralda')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
                     } else if (this.grid[x][y].type === 'diamante') {
-                        // Dibujar bloque de diamante
-                        this.grid[x][y].sprite = this.add.image(x * this.tileSize, y * this.tileSize, 'diamante')
+                        // Dibujar fondo de piedra
+                        this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
+                            .setOrigin(0)
+                            .setDisplaySize(this.tileSize, this.tileSize);
+                        // Dibujar capa de carbón encima
+                        this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'diamante')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
                     } else {
@@ -1423,6 +1452,21 @@ class GameScene extends Phaser.Scene {
     startMovement(dx, dy) {
         if (this.moving) return; // Evitar iniciar si ya está en movimiento
 
+        if (this.durabilidadPico <= 0) {
+            const tileSize = this.tileSize;
+            const targetX = this.player.x + dx;
+            const targetY = this.player.y + dy;
+            const gridX = Math.floor(targetX / tileSize);
+            const gridY = Math.floor(targetY / tileSize);
+
+            // Permitir moverse si el bloque es una escalera o está vacío
+            if (this.grid[gridX] && this.grid[gridX][gridY] &&
+                (this.grid[gridX][gridY].type === "empty" || this.grid[gridX][gridY].type === "ladder")) {
+            } else {
+                return;
+            }
+        }
+
         const tileSize = this.tileSize;
         const targetX = this.player.x + dx;
         const targetY = this.player.y + dy;
@@ -1476,6 +1520,21 @@ class GameScene extends Phaser.Scene {
 
     startMovementWithLadder(dx, dy) {
         if (this.moving) return;
+
+        if (this.durabilidadPico <= 0) {
+            const tileSize = this.tileSize;
+            const targetX = this.player.x + dx;
+            const targetY = this.player.y + dy;
+            const gridX = Math.floor(targetX / tileSize);
+            const gridY = Math.floor(targetY / tileSize);
+
+            // Permitir moverse si el bloque es una escalera o está vacío
+            if (this.grid[gridX] && this.grid[gridX][gridY] &&
+                (this.grid[gridX][gridY].type === "empty" || this.grid[gridX][gridY].type === "ladder")) {
+            } else {
+                return;
+            }
+        }
 
         const tileSize = this.tileSize;
         const targetX = this.player.x + dx;
@@ -1552,10 +1611,12 @@ class GameScene extends Phaser.Scene {
     }
 
     processBlock(gridX, gridY) {
-        // 🚨 Verificar si el pico está roto antes de permitir minar
+        // 🚨 Si el pico está roto, bloquear el movimiento
         if (this.durabilidadPico <= 0) {
-            console.log("❌ No puedes minar más bloques, tu pico está roto.");
-            return;
+            if (this.grid[gridX][gridY] && this.grid[gridX][gridY].type === "empty") {
+            } else {
+                return;
+            }
         }
 
         const block = (this.grid[gridX] && this.grid[gridX][gridY]) ? this.grid[gridX][gridY] : null;
