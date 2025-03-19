@@ -249,6 +249,12 @@ function guardarPartida() {
         }
     }
 
+    // 🔹 Obtener los logros en un formato guardable
+    const logrosGuardados = {};
+    for (const key in gameScene.logros) {
+        logrosGuardados[key] = gameScene.logros[key].completado;
+    }
+
     // 🔹 Obtener los datos reales del juego
     const datosPartida = {
         posX: Math.floor(gameScene.player.x / gameScene.tileSize),
@@ -268,7 +274,11 @@ function guardarPartida() {
         picoDurabilidad: gameScene.durabilidadPico,
         vida: gameScene.health,
         escaleras: gameScene.cantidadEscaleras,
-        gridState: gridState // 📌 Guardamos el estado del grid modificado
+        gridState: gridState, // 📌 Guardamos el estado del grid modificado
+        totalMineralesVendidos: gameScene.totalMineralesVendidos,
+        totalEscalerasColocadas: gameScene.totalEscalerasColocadas,
+        ultimaCapaAlcanzada: gameScene.ultimaCapaAlcanzada,
+        logros: logrosGuardados // 📌 Agregar logros
     };
 
     console.log("📌 Datos de la partida a guardar:", datosPartida);
@@ -342,6 +352,19 @@ function cargarPartida(userId) {
                 gameScene.picoActual = datos.picoTipo || "pico_madera";
                 gameScene.iconoPico.setTexture(gameScene.picoActual); // 🔹 Actualizar la imagen del icono del pico
                 gameScene.durabilidadPico = datos.picoDurabilidad || 100;
+                gameScene.totalMineralesVendidos = datos.totalMineralesVendidos || 0;
+                gameScene.totalEscalerasColocadas = datos.totalEscalerasColocadas || 0;
+                gameScene.ultimaCapaAlcanzada = datos.ultimaCapaAlcanzada || false;
+
+                // 🔹 Restaurar los logros guardados
+                if (datos.logros) {
+                    for (const key in datos.logros) {
+                        if (gameScene.logros[key] !== undefined) {
+                            gameScene.logros[key].completado = datos.logros[key];
+                        }
+                    }
+                }
+
                 // 🔹 Actualizar la barra de durabilidad en la UI
                 const durabilidadMaxima = gameScene.durabilidadesPicos[gameScene.picoActual] || 100;
                 const porcentajeDurabilidad = gameScene.durabilidadPico / durabilidadMaxima;
@@ -405,19 +428,6 @@ class GameScene extends Phaser.Scene {
         this.currentTween = null;
         this.teclasHabilitadas = true; // Asegurar que las teclas están activas después de reiniciar        
         this.isLadderMovement = false; // Indicará si el movimiento actual es con escalera
-
-        this.logros = {
-            MINERO_NOCTURNO: { titulo: "Minero Nocturno 🌙", descripcion: "Juega exactamente a las 00:00", completado: false },
-            CASI_ME_MATO: { titulo: "Casi me mato 💀", descripcion: "Sobrevive a una caída y quédate con 1 de vida", completado: false },
-            OFERTA_FANTASMA: { titulo: "Oferta Fantasma 👻", descripcion: "Intenta vender un mineral que no tienes", completado: false },
-            EL_ULTIMO_GOLPE: { titulo: "El Último Golpe 🔨", descripcion: "Pica el último mineral del mapa", completado: false },
-            REGRESO_DEL_INFIERNO: { titulo: "Regreso del Inframundo 🌋", descripcion: "Baja hasta la última capa y vuelve a la superficie", completado: false },
-            SIN_SALIDA: { titulo: "Sin Salida 🚧", descripcion: "Quedarte sin escaleras y no poder salir", completado: false },
-            MODO_ZEN: { titulo: "Modo Zen 🧘‍♂️", descripcion: "Pasa 5 minutos sin picar ningún bloque", completado: false },
-            PRIMER_DESTELLO: { titulo: "Primer Destello ✨", descripcion: "Pica tu primer mineral raro", completado: false },
-            COMERCIANTE_MAYORISTA: { titulo: "Comerciante Mayorista 🏪", descripcion: "Vende más de 500 minerales en la refinería", completado: false },
-            ARQUITECTO_MINERO: { titulo: "El Arquitecto Minero 🏗️", descripcion: "Coloca más de 250 escaleras en una partida", completado: false }
-        };
     }
 
     init(data) {
@@ -469,6 +479,23 @@ class GameScene extends Phaser.Scene {
 
     create() {
         console.log("🎮 Iniciando GameScene...");
+
+        this.logros = {
+            MINERO_NOCTURNO: { titulo: "Minero Nocturno 🌙", descripcion: "Juega exactamente a las 00:00", completado: false },
+            CASI_ME_MATO: { titulo: "Casi me mato 💀", descripcion: "Sobrevive a una caída y quédate con 10 de vida", completado: false },
+            OFERTA_FANTASMA: { titulo: "Oferta Fantasma 👻", descripcion: "Intenta vender un mineral que no tienes", completado: false },
+            EL_ULTIMO_GOLPE: { titulo: "El Último Golpe 🔨", descripcion: "Pica el último mineral del mapa", completado: false },
+            REGRESO_DEL_INFIERNO: { titulo: "Regreso del Inframundo 🌋", descripcion: "Baja hasta la última capa y vuelve a la superficie", completado: false },
+            SIN_SALIDA: { titulo: "Sin Salida 🚧", descripcion: "Quedarte sin escaleras mientras subes", completado: false },
+            MODO_ZEN: { titulo: "Modo Zen 🧘‍♂️", descripcion: "Pasa 10 minutos sin picar ningún bloque", completado: false },
+            PRIMER_DESTELLO: { titulo: "Primer Destello ✨", descripcion: "Pica tu primer mineral raro", completado: false },
+            COMERCIANTE_MAYORISTA: { titulo: "Comerciante Mayorista 🏪", descripcion: "Vende 500 minerales en la refinería", completado: false },
+            ARQUITECTO_MINERO: { titulo: "El Arquitecto Minero 🏗️", descripcion: "Coloca 250 escaleras en una partida", completado: false }
+        };
+        this.totalMineralesVendidos = 0;
+        this.totalEscalerasColocadas = 0;
+        this.ultimaCapaAlcanzada = false;
+        this.ultimoMinado = Date.now(); // 📌 Guarda el tiempo actual en milisegundos
 
         this.events.on('shutdown', () => {
             console.log("🚪 GameScene cerrada. Deteniendo música...");
@@ -848,13 +875,13 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    actualizarLogro(key) {
-        if (this.logros[key] && !this.logros[key].completado) {
-            this.logros[key].completado = true;
-            console.log(`🏆 Logro desbloqueado: ${this.logros[key].titulo}`);
-            mostrarNotificacion(`🏆 Logro desbloqueado: ${this.logros[key].titulo}`, true);
+    actualizarLogro(logro) {
+        if (!logro.completado) {
+            logro.completado = true;
+            console.log(`🏆 Logro desbloqueado: ${logro.titulo}`);
+            mostrarNotificacion(`🏆 Logro desbloqueado: ${logro.titulo}`, true);
         }
-    }    
+    }
 
     generateRandomMaterial() {
         const tileSize = 128;
@@ -1076,6 +1103,9 @@ class GameScene extends Phaser.Scene {
 
     takeDamage(damage) {
         const newHealth = Math.max(0, this.health - damage); // Calcular la nueva vida
+        if (newHealth === 10) {
+            this.actualizarLogro(this.logros.CASI_ME_MATO);
+        }
 
         // Animar la reducción de vida gradualmente
         this.tweens.add({
@@ -1159,6 +1189,10 @@ class GameScene extends Phaser.Scene {
         if (this.cantidadEscaleras > 0) {
             this.cantidadEscaleras--; // Restar una escalera
             this.contadorEscaleras.setText(this.cantidadEscaleras); // Actualizar la UI
+            this.totalEscalerasColocadas += 1; // Aumentar el contador total
+            if (this.totalEscalerasColocadas >= 250) {
+                this.actualizarLogro(this.logros.ARQUITECTO_MINERO);
+            }
             return true; // Indica que se pudo colocar la escalera
         } else {
             console.log("⚠ No tienes más escaleras disponibles.");
@@ -1167,6 +1201,23 @@ class GameScene extends Phaser.Scene {
     }
 
     update() {
+        // ✅ Obtener la hora del sistema al iniciar la partida
+        const ahora = new Date();
+        const hora = ahora.getHours();
+        const minutos = ahora.getMinutes();
+
+        // ✅ Comprobar si es exactamente medianoche (00:00)
+        if (hora === 0 && minutos === 0) {
+            this.actualizarLogro(this.logros.MINERO_NOCTURNO);
+        }
+
+        // ✅ Comprobar si han pasado 5 minutos desde el último minado
+        const tiempoTranscurrido = ahora - this.ultimoMinado; // 📌 Diferencia de tiempo en milisegundos
+
+        if (tiempoTranscurrido >= 5000) { // 📌 10 minutos = 600,000 ms
+            this.actualizarLogro(this.logros.MODO_ZEN);
+        }
+
         if (this.loadingContainer) {
             this.loadingContainer.setPosition(
                 this.cameras.main.scrollX + this.cameras.main.width / 2,
@@ -1355,6 +1406,12 @@ class GameScene extends Phaser.Scene {
 
         // Actualizar las coordenadas del jugador en el cartel
         this.coordinatesText.setText(`X: ${Math.floor(this.player.x / this.tileSize)}, Y: ${Math.floor(this.player.y / this.tileSize)}`);
+        if (Math.floor(this.player.y / this.tileSize) == 174) {
+            this.ultimaCapaAlcanzada = true;
+        }
+        if (Math.floor(this.player.y / this.tileSize) == 2 && this.ultimaCapaAlcanzada) {
+            this.actualizarLogro(this.logros.REGRESO_DEL_INFIERNO);
+        }
     }
 
     playNextSound() {
@@ -1494,6 +1551,9 @@ class GameScene extends Phaser.Scene {
                     }
                 } else {
                     console.log("🚨 No tienes más escaleras, pero puedes seguir moviéndote.");
+                    if (dx === 0 && dy < 0) {
+                        this.actualizarLogro(this.logros.SIN_SALIDA);
+                    }
                 }
 
                 this.moving = false;
@@ -1536,10 +1596,13 @@ class GameScene extends Phaser.Scene {
                 this.oroCount += 1;
             } else if (blockType === 'rubi') {
                 this.rubiCount += 1;
+                this.actualizarLogro(this.logros.PRIMER_DESTELLO);
             } else if (blockType === 'esmeralda') {
                 this.esmeraldaCount += 1;
+                this.actualizarLogro(this.logros.PRIMER_DESTELLO);
             } else if (blockType === 'diamante') {
                 this.diamanteCount += 1;
+                this.actualizarLogro(this.logros.PRIMER_DESTELLO);
             }
 
             // ✅ Eliminar todos los sprites del bloque, excepto las escaleras
@@ -1556,6 +1619,7 @@ class GameScene extends Phaser.Scene {
                     block.baseSprite.destroy();
                     block.baseSprite = null;
                 }
+                this.ultimoMinado = Date.now(); // 📌 Actualizar el tiempo de la última extracción
             }
 
             // ✅ Actualizar la barra de durabilidad en la UI
@@ -1589,6 +1653,7 @@ class GameScene extends Phaser.Scene {
         this.juegoTerminado = true;
         this.scene.pause(); // Pausar GameScene
         this.scene.launch("VictoryScene"); // Iniciar la escena de victoria
+        this.actualizarLogro(this.logros.EL_ULTIMO_GOLPE);
     }
 
     startFall(fallDistance) {
@@ -1991,7 +2056,7 @@ class LogrosScene extends Phaser.Scene {
         const columnSpacing = 600;
         const rowSpacing = 80;
 
-        logrosArray .forEach((logro, index) => {
+        logrosArray.forEach((logro, index) => {
             const col = index % 2;
             const row = Math.floor(index / 2);
             const x = startX + col * columnSpacing;
@@ -2480,12 +2545,17 @@ class RefineriaMenuScene extends Phaser.Scene {
         if (gameScene[nombre + "Count"] > 0) {
             gameScene[nombre + "Count"]--; // Restar un mineral
             gameScene.monedas += valor; // Sumar monedas
+            gameScene.totalMineralesVendidos += 1; // Contar minerales vendidos
+            if (gameScene.totalMineralesVendidos === 500) {
+                gameScene.actualizarLogro(gameScene.logros.COMERCIANTE_MAYORISTA);
+            }
 
             console.log(`🟢 Refinaste 1 ${nombre}. Ahora tienes ${gameScene.monedas} monedas.`);
 
             // 🔹 Actualizar el contador de monedas en el menú
             this.contadorMonedas.setText(gameScene.monedas.toString());
         } else {
+            gameScene.actualizarLogro(gameScene.logros.OFERTA_FANTASMA);
             console.log(`❌ No tienes suficiente ${nombre} para refinar.`);
         }
     }
