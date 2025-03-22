@@ -1,3 +1,11 @@
+const DEBUG_MODE = false; // ✅ Cámbialo a true para activar logs
+
+function debugLog(...args) {
+    if (DEBUG_MODE) {
+        console.log(...args);
+    }
+}
+
 class MenuScene extends Phaser.Scene {
     constructor() {
         super('MenuScene');
@@ -10,11 +18,11 @@ class MenuScene extends Phaser.Scene {
 
     create() {
         // Agregar el fondo del menú
-        this.add.image(this.cameras.main.width / 2, this.cameras.main.height / 2, 'fondoMenu')
+        this.fondo = this.add.image(this.cameras.main.width / 2, this.cameras.main.height / 2, 'fondoMenu')
             .setOrigin(0.5)
             .setDisplaySize(this.cameras.main.width, this.cameras.main.height);
 
-        this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 3 + 20, 'Miner Madness',
+        this.textoTitulo = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 3 + 20, 'Miner Madness',
             { fontSize: '48px', fill: '#000', fontStyle: 'bold' })
             .setOrigin(0.5);
 
@@ -27,7 +35,7 @@ class MenuScene extends Phaser.Scene {
                 const confirmPlay = window.confirm("Estás jugando como invitado. Tu progreso NO se guardará. ¿Quieres continuar?");
 
                 if (confirmPlay) {
-                    console.log("🎮 Iniciando partida invitado...");
+                    debugLog("🎮 Iniciando partida invitado...");
                     this.scene.start("GameScene", { modo: "nueva" });
                 }
             }
@@ -39,7 +47,7 @@ class MenuScene extends Phaser.Scene {
             this.cameras.main.width / 2, this.cameras.main.height / 2,
             "Nueva partida",
             () => {
-                console.log("🎮 Iniciando partida nueva...");
+                debugLog("🎮 Iniciando partida nueva...");
                 this.scene.start("GameScene", { modo: "nueva" });
             }
         ).setVisible(false);;
@@ -50,7 +58,7 @@ class MenuScene extends Phaser.Scene {
             this.cameras.main.width / 2 - 160, this.cameras.main.height / 2,
             "Continuar partida",
             () => {
-                console.log("🎮 Continuando partida...");
+                debugLog("🎮 Continuando partida...");
                 this.scene.start("GameScene", { modo: "continuar" });
             }
         ).setVisible(false);;
@@ -61,7 +69,7 @@ class MenuScene extends Phaser.Scene {
             this.cameras.main.width / 2 + 160, this.cameras.main.height / 2,
             "Nueva partida",
             () => {
-                console.log("🎮 Iniciando partida nueva...");
+                debugLog("🎮 Iniciando partida nueva...");
                 this.scene.start("GameScene", { modo: "sobreescribir" });
             }
         ).setVisible(false);;
@@ -91,7 +99,7 @@ class MenuScene extends Phaser.Scene {
 
         // 🔹 Detectar cambios en la autenticación
         window.firebaseAuth.onAuthStateChanged((user) => {
-            console.log("🔒 Estado de autenticación cambiado:", user ? "Usuario autenticado" : "Usuario NO autenticado");
+            debugLog("🔒 Estado de autenticación cambiado:", user ? "Usuario autenticado" : "Usuario NO autenticado");
 
             if (user) {
                 // ✅ Usuario autenticado: Cambiar a "Cerrar sesión"
@@ -103,14 +111,14 @@ class MenuScene extends Phaser.Scene {
                 // ✅ Verificar si hay una partida guardada en Firebase
                 window.firebaseDB.collection("partidas").doc(user.uid).get().then((doc) => {
                     if (doc.exists) {
-                        console.log("✅ Partida guardada encontrada:", doc.data());
+                        debugLog("✅ Partida guardada encontrada:", doc.data());
 
                         this.botonInvitado.setVisible(false);
                         this.botonIniciar.setVisible(false);
                         this.botonContinuar.setVisible(true);
                         this.botonNueva.setVisible(true);
                     } else {
-                        console.log("⚠ No hay partida guardada.");
+                        debugLog("⚠ No hay partida guardada.");
                         this.botonInvitado.setVisible(false);
                         this.botonIniciar.setVisible(true);
                         this.botonContinuar.setVisible(false);
@@ -133,12 +141,28 @@ class MenuScene extends Phaser.Scene {
         });
 
         // Añadir el cartel con tu nombre en color crema
-        this.add.text(
+        this.textoNombre = this.add.text(
             this.cameras.main.width / 2, // Centrado en X
             this.cameras.main.height / 2 + 80, // Posicionar debajo del botón
             'Hecho por: Nicolás Rodríguez Ferrándiz',
             { fontSize: '24px', fill: '#f5deb3', fontStyle: 'bold' } // Color crema y estilo en negrita
         ).setOrigin(0.5);
+
+        this.scale.on('resize', (gameSize) => {
+            const { width, height } = gameSize;
+
+            // ✅ Reposicionar botones
+            this.botonIniciar.setPosition(width / 2, height / 2);
+            this.botonInvitado.setPosition(width / 2, height / 2);
+            this.botonContinuar.setPosition(width / 2 - 160, height / 2);
+            this.botonNueva.setPosition(width / 2 + 160, height / 2);
+            this.textoTitulo.setPosition(width / 2, height / 3 + 20);
+            this.textoNombre.setPosition(width / 2, height / 2 + 80);
+            this.fondo.setPosition(width / 2, height / 2).setDisplaySize(width, height);
+
+            // ✅ Botón Google
+            this.googleButtonContainer.setPosition(width - 150, 50);
+        });
     }
 
     crearBotonMenu(ancho, alto, posX, posY, texto, callback) {
@@ -163,7 +187,7 @@ class MenuScene extends Phaser.Scene {
 
         // ✅ Hacer que el botón responda a clics
         buttonBackground.on("pointerdown", () => {
-            console.log(`🎮 Botón "${texto}" presionado`);
+            debugLog(`🎮 Botón "${texto}" presionado`);
             if (callback) {
                 callback(); // 📌 Ejecutar la función asociada al botón
             }
@@ -196,7 +220,7 @@ function loginWithGoogle() {
     window.firebaseAuth.signInWithPopup(provider)
         .then((result) => {
             const user = result.user;
-            console.log("✅ Usuario autenticado:", user.displayName);
+            debugLog("✅ Usuario autenticado:", user.displayName);
         })
         .catch((error) => {
             console.error("❌ Error en autenticación:", error.message);
@@ -206,7 +230,7 @@ function loginWithGoogle() {
 function logoutUser() {
     window.firebaseAuth.signOut()
         .then(() => {
-            console.log("✅ Usuario ha cerrado sesión.");
+            debugLog("✅ Usuario ha cerrado sesión.");
         })
         .catch((error) => {
             console.error("❌ Error al cerrar sesión:", error.message);
@@ -281,12 +305,12 @@ function guardarPartida() {
         logros: logrosGuardados // 📌 Agregar logros
     };
 
-    console.log("📌 Datos de la partida a guardar:", datosPartida);
+    debugLog("📌 Datos de la partida a guardar:", datosPartida);
 
     // 🔹 Guardar en Firestore en la colección "partidas"
     window.firebaseDB.collection("partidas").doc(user.uid).set(datosPartida)
         .then(() => {
-            console.log("✅ Partida guardada correctamente.");
+            debugLog("✅ Partida guardada correctamente.");
             notificacion.remove();
             mostrarNotificacion("✅ Tu partida ha sido guardada en la nube.", true);
         })
@@ -329,7 +353,7 @@ function cargarPartida(userId) {
         .then((doc) => {
             const gameScene = game.scene.getScene("GameScene");
             if (doc.exists) {
-                console.log("✅ Partida encontrada en la base de datos:", doc.data());
+                debugLog("✅ Partida encontrada en la base de datos:", doc.data());
 
                 if (!gameScene) {
                     console.error("❌ No se encontró la escena del juego.");
@@ -378,7 +402,7 @@ function cargarPartida(userId) {
 
                 // 🔹 Aplicar el gridState sobre el mundo generado aleatoriamente
                 if (datos.gridState) {
-                    console.log("🔄 Aplicando gridState...");
+                    debugLog("🔄 Aplicando gridState...");
                     for (const cell of datos.gridState) {
                         const { x, y, type } = cell;
 
@@ -397,10 +421,10 @@ function cargarPartida(userId) {
                 }
                 gameScene.fillMaterials(); // 🟢 Rellenar los materiales faltantes
 
-                console.log("✅ Grid restaurado exitosamente.");
-                console.log("🔹 Partida cargada con éxito.");
+                debugLog("✅ Grid restaurado exitosamente.");
+                debugLog("🔹 Partida cargada con éxito.");
             } else {
-                console.log("ℹ No hay partida guardada. Se iniciará una nueva.");
+                debugLog("ℹ No hay partida guardada. Se iniciará una nueva.");
                 gameScene.generateRandomMaterial();
             }
             // 🔹 Ocultar el panel de carga cuando los datos estén listos
@@ -430,7 +454,7 @@ class GameScene extends Phaser.Scene {
 
     init(data) {
         this.modoInicio = data.modo;
-        console.log("🔄 Iniciando GameScene con modo de inicio:", this.modoInicio);
+        debugLog("🔄 Iniciando GameScene con modo de inicio:", this.modoInicio);
     }
 
     preload() {
@@ -476,7 +500,7 @@ class GameScene extends Phaser.Scene {
     }
 
     create() {
-        console.log("🎮 Iniciando GameScene...");
+        debugLog("🎮 Iniciando GameScene...");
 
         this.logros = {
             MINERO_NOCTURNO: { titulo: "Minero Nocturno 🌙", descripcion: "Juega exactamente a las 00:00", completado: false },
@@ -496,7 +520,7 @@ class GameScene extends Phaser.Scene {
         this.ultimoMinado = Date.now(); // 📌 Guarda el tiempo actual en milisegundos
 
         this.events.on('shutdown', () => {
-            console.log("🚪 GameScene cerrada. Deteniendo música...");
+            debugLog("🚪 GameScene cerrada. Deteniendo música...");
 
             if (this.sounds) {
                 this.sounds.forEach(sound => {
@@ -770,7 +794,7 @@ class GameScene extends Phaser.Scene {
             .setDepth(15);
 
         this.botonAyuda.on("pointerdown", () => {
-            console.log("📖 Abriendo pantalla de ayuda...");
+            debugLog("📖 Abriendo pantalla de ayuda...");
             this.scene.launch("HelpScene");
         });
 
@@ -787,7 +811,7 @@ class GameScene extends Phaser.Scene {
             .setDepth(15);
 
         this.botonLogros.on("pointerdown", () => {
-            console.log("🏆 Abriendo pantalla de logros...");
+            debugLog("🏆 Abriendo pantalla de logros...");
             this.scene.launch("LogrosScene");
         });
 
@@ -860,23 +884,47 @@ class GameScene extends Phaser.Scene {
         if (this.modoInicio === "continuar") {
             const user = window.firebaseAuth.currentUser;
             if (user) {
-                console.log("🔹 Usuario autenticado, cargando partida...");
+                debugLog("🔹 Usuario autenticado, cargando partida...");
                 this.loadingContainer.setVisible(true);
                 cargarPartida(user.uid);
             } else {
-                console.log("ℹ Usuario no autenticado, iniciando nueva partida.");
+                debugLog("ℹ Usuario no autenticado, iniciando nueva partida.");
                 this.generateRandomMaterial();
             }
         } else {
-            console.log("🆕 Iniciando nueva partida...");
+            debugLog("🆕 Iniciando nueva partida...");
             this.generateRandomMaterial();
         }
+
+        this.scale.on('resize', (gameSize) => {
+            const { width, height } = gameSize;
+
+            // Recalcular posiciones
+            const buttonSize = 75;
+
+            // Ayuda en la esquina superior derecha
+            this.botonAyuda.setPosition(width - buttonSize / 2 - 10, buttonSize / 2 + 10);
+
+            // Logros justo a la izquierda del botón de ayuda
+            this.botonLogros.setPosition(this.botonAyuda.x - buttonSize - 10, this.botonAyuda.y);
+
+            // Cartel de coordenadas
+            this.coordinatesText.setPosition(width / 2, 10);
+
+            this.coordinatesBackground.clear();
+            this.coordinatesBackground.fillStyle(0x000000, 0.5);
+            const textWidth = 150;
+            const textHeight = 40;
+            this.coordinatesBackground.fillRoundedRect(
+                (width / 2) - (textWidth / 2), 5, textWidth, textHeight, 10
+            );
+        });
     }
 
     actualizarLogro(logro) {
         if (!logro.completado) {
             logro.completado = true;
-            console.log(`🏆 Logro desbloqueado: ${logro.titulo}`);
+            debugLog(`🏆 Logro desbloqueado: ${logro.titulo}`);
             mostrarNotificacion(`🏆 Logro desbloqueado: ${logro.titulo}`, true);
         }
     }
@@ -1152,7 +1200,7 @@ class GameScene extends Phaser.Scene {
     }
 
     handleDeath() {
-        console.log("💀 El personaje ha muerto.");
+        debugLog("💀 El personaje ha muerto.");
 
         // ❌ Evitar que siga moviéndose
         this.moving = true;
@@ -1174,7 +1222,7 @@ class GameScene extends Phaser.Scene {
 
         // 🕒 Reiniciar después de 1,5 segundos
         this.time.delayedCall(1500, () => {
-            console.log("🔄 Reiniciando...");
+            debugLog("🔄 Reiniciando...");
             this.resetGame();
         }, [], this);
     }
@@ -1189,7 +1237,7 @@ class GameScene extends Phaser.Scene {
     }
 
     abrirMenuRefineria() {
-        console.log("🟢 Abriendo RefineriaMenuScene...");
+        debugLog("🟢 Abriendo RefineriaMenuScene...");
 
         // 🔹 Pausar GameScene y lanzar la escena de la Refinería
         this.scene.pause();
@@ -1197,7 +1245,7 @@ class GameScene extends Phaser.Scene {
     }
 
     abrirMenuArsenal() {
-        console.log("🟢 Abriendo ArsenalMenuScene...");
+        debugLog("🟢 Abriendo ArsenalMenuScene...");
 
         // 🔹 Pausar GameScene y lanzar la escena del Arsenal
         this.scene.pause();
@@ -1214,7 +1262,7 @@ class GameScene extends Phaser.Scene {
             }
             return true; // Indica que se pudo colocar la escalera
         } else {
-            console.log("⚠ No tienes más escaleras disponibles.");
+            debugLog("⚠ No tienes más escaleras disponibles.");
             return false; // Indica que no se puede colocar
         }
     }
@@ -1258,7 +1306,7 @@ class GameScene extends Phaser.Scene {
         if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
             // Primero, si el jugador está en la celda de la refineria (3/4/5,2), se abre la refineria
             if ((playerGridX === 3 || playerGridX === 4 || playerGridX === 5) && playerGridY === 2) {
-                console.log("🟢 Abriendo menú de la refineria...");
+                debugLog("🟢 Abriendo menú de la refineria...");
                 this.abrirMenuRefineria();
                 return; // Salir del update para no ejecutar más código en este frame
             }
@@ -1268,14 +1316,14 @@ class GameScene extends Phaser.Scene {
             const buyStoreGridXMax = 13;
 
             if ((playerGridX >= buyStoreGridXMin && playerGridX <= buyStoreGridXMax) && playerGridY === 2) {
-                console.log("🟢 Abriendo menú del arsenal");
+                debugLog("🟢 Abriendo menú del arsenal");
                 this.abrirMenuArsenal();
                 return; // Salir para evitar que se ejecute el resto del update
             }
 
             // Agregamos la restricción: si la fila es menor que 3, no se coloca escalera
             if (playerGridY < 3) {
-                console.log("No se pueden poner escaleras por encima de la fila 3");
+                debugLog("No se pueden poner escaleras por encima de la fila 3");
                 return;
             }
 
@@ -1383,7 +1431,7 @@ class GameScene extends Phaser.Scene {
                 if (this.spaceKey.isDown) {
                     // Si se pulsa espacio + flecha arriba, no permitimos mover hacia arriba si estamos en la superficie (fila 3)
                     if (gridY === 2) {
-                        console.log("No se permite mover hacia arriba desde la superficie.");
+                        debugLog("No se permite mover hacia arriba desde la superficie.");
                     } else {
                         if (this.moving && !this.isLadderMovement && this.currentTween) {
                             this.currentTween.stop();
@@ -1475,7 +1523,7 @@ class GameScene extends Phaser.Scene {
 
         // 🚨 Verificar si el destino está dentro de los límites de la cuadrícula
         if (!this.grid[gridX] || !this.grid[gridX][gridY]) {
-            console.log("⛔ No puedes moverte fuera de los límites.");
+            debugLog("⛔ No puedes moverte fuera de los límites.");
             return;
         }
 
@@ -1486,13 +1534,13 @@ class GameScene extends Phaser.Scene {
 
         // 🚨 Bloquear movimiento si el bloque de destino es hierro
         if (targetBlock === 'iron') {
-            console.log("⛔ No puedes atravesar hierro.");
+            debugLog("⛔ No puedes atravesar hierro.");
             return;
         }
 
         // 🚨 Si el bloque de destino es un mineral y el pico no puede minarlo, mostrar advertencia y bloquear movimiento
         if (mineralesValidos.includes(targetBlock) && !this.materialesPermitidos[this.picoActual].includes(targetBlock)) {
-            console.log(`⚠ No puedes minar ${targetBlock} con ${this.picoActual}. Mostrando advertencia...`);
+            debugLog(`⚠ No puedes minar ${targetBlock} con ${this.picoActual}. Mostrando advertencia...`);
 
             if (!this.scene.isActive("WarningScene")) {
                 this.scene.launch("WarningScene", {
@@ -1544,7 +1592,7 @@ class GameScene extends Phaser.Scene {
 
         // 🚨 Verificar si el destino está dentro de los límites de la cuadrícula
         if (!this.grid[gridX] || !this.grid[gridX][gridY]) {
-            console.log("⛔ No puedes moverte fuera de los límites.");
+            debugLog("⛔ No puedes moverte fuera de los límites.");
             return;
         }
 
@@ -1555,13 +1603,13 @@ class GameScene extends Phaser.Scene {
 
         // 🚨 Bloquear movimiento si el bloque de destino es hierro
         if (targetBlock === 'iron') {
-            console.log("⛔ No puedes atravesar hierro.");
+            debugLog("⛔ No puedes atravesar hierro.");
             return;
         }
 
         // 🚨 Si el bloque de destino es un mineral y el pico no puede minarlo, mostrar advertencia y bloquear movimiento
         if (mineralesValidos.includes(targetBlock) && !this.materialesPermitidos[this.picoActual].includes(targetBlock)) {
-            console.log(`⚠ No puedes minar ${targetBlock} con ${this.picoActual}. Mostrando advertencia...`);
+            debugLog(`⚠ No puedes minar ${targetBlock} con ${this.picoActual}. Mostrando advertencia...`);
 
             if (!this.scene.isActive("WarningScene")) {
                 this.scene.launch("WarningScene", {
@@ -1598,7 +1646,7 @@ class GameScene extends Phaser.Scene {
                         }
                     }
                 } else {
-                    console.log("🚨 No tienes más escaleras, pero puedes seguir moviéndote.");
+                    debugLog("🚨 No tienes más escaleras, pero puedes seguir moviéndote.");
                     if (dx === 0 && dy < 0) {
                         this.actualizarLogro(this.logros.SIN_SALIDA);
                     }
@@ -1678,7 +1726,7 @@ class GameScene extends Phaser.Scene {
 
             // ✅ Si la durabilidad llega a 0, el pico se rompe después de minar correctamente
             if (this.durabilidadPico <= 0) {
-                console.log("❌ Tu pico se ha roto. No puedes minar más hasta comprar uno nuevo.");
+                debugLog("❌ Tu pico se ha roto. No puedes minar más hasta comprar uno nuevo.");
                 this.durabilidadPico = 0;
                 this.barraDurabilidad.setScale(0, 1);
             }
@@ -1747,119 +1795,97 @@ class MochilaScene extends Phaser.Scene {
     }
 
     create() {
-        console.log("🎒 Mochila abierta");
+        debugLog("🎒 Mochila abierta");
 
         const gameScene = this.scene.get('GameScene');
         if (gameScene) {
             this.scene.pause('GameScene'); // Pausar el juego
         }
 
-        // ✅ Fondo semitransparente
-        const overlay = this.add.rectangle(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2,
-            this.cameras.main.width,
-            this.cameras.main.height,
-            0x000000,
-            0.7
-        ).setDepth(100);
+        // ✅ Crear contenedor centrado
+        this.container = this.add.container(
+            this.cameras.main.scrollX + this.cameras.main.width / 2,
+            this.cameras.main.scrollY + this.cameras.main.height / 2
+        );
 
-        // ✅ Borde de la mochila
-        const border = this.add.rectangle(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2,
-            this.cameras.main.width - 375,
-            this.cameras.main.height - 75,
-            0x5A3825
-        ).setDepth(101).setStrokeStyle(4, 0x000000);
+        // ✅ Fondo semitransparente (cubre toda la pantalla)
+        this.overlay = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.7)
+            .setDepth(100);
 
-        // ✅ Panel de la mochila
-        const panel = this.add.rectangle(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2,
-            this.cameras.main.width - 400,
-            this.cameras.main.height - 100,
-            0xFFF0C9
-        ).setDepth(101).setStrokeStyle(4, 0x000000);
+        // ✅ Borde
+        this.border = this.add.rectangle(0, 0, this.cameras.main.width - 50, this.cameras.main.height - 50, 0x5A3825)
+            .setStrokeStyle(4, 0x000000)
+            .setDepth(101);
 
-        // ✅ Texto "Mochila"
-        this.add.text(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2 - 240,
-            "Mochila 🎒",
-            {
-                fontSize: "64px",
-                fill: "#000",
-                fontFamily: "Arial",
-                fontStyle: "bold"
-            }
-        ).setOrigin(0.5).setDepth(102);
+        // ✅ Panel interior
+        this.panel = this.add.rectangle(0, 0, this.cameras.main.width - 100, this.cameras.main.height - 100, 0xFFF0C9)
+            .setStrokeStyle(4, 0x000000)
+            .setDepth(101);
 
-        // ✅ Contenedores de inventario (solo ejemplo, puedes mejorarlo)
-        this.add.text(
-            this.cameras.main.width / 2 - 300,
-            this.cameras.main.height / 2 - 90,
+        // ✅ Añadirlos al contenedor
+        this.container.add([this.overlay, this.border, this.panel]);
+
+        // ✅ Título
+        const titulo = this.add.text(0, -this.cameras.main.height / 2 + 100, "Mochila 🎒", {
+            fontSize: "64px",
+            fill: "#000",
+            fontFamily: "Arial",
+            fontStyle: "bold"
+        }).setOrigin(0.5).setDepth(102);
+
+        // ✅ Contadores de la izquierda
+        const textosIzquierda = [
             `Carbón: ${gameScene.carbonCount}`,
-            { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
-        ).setOrigin(0.5).setDepth(102);
-
-        this.add.text(
-            this.cameras.main.width / 2 - 300,
-            this.cameras.main.height / 2 - 30,
             `Cobre: ${gameScene.cobreCount}`,
-            { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
-        ).setOrigin(0.5).setDepth(102);
-
-        this.add.text(
-            this.cameras.main.width / 2 - 300,
-            this.cameras.main.height / 2 + 30,
             `Hierro: ${gameScene.hierroCount}`,
-            { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
-        ).setOrigin(0.5).setDepth(102);
-
-        this.add.text(
-            this.cameras.main.width / 2 - 300,
-            this.cameras.main.height / 2 + 90,
             `Plata: ${gameScene.plataCount}`,
-            { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
-        ).setOrigin(0.5).setDepth(102);
+        ];
+        textosIzquierda.forEach((texto, i) => {
+            const t = this.add.text(-350, -90 + i * 60, texto, {
+                fontSize: "40px",
+                fill: "#000",
+                fontFamily: "Arial"
+            }).setOrigin(0.5).setDepth(102);
+            this.container.add(t);
+        });
 
-        this.add.text(
-            this.cameras.main.width / 2 + 300,
-            this.cameras.main.height / 2 - 90,
+        // ✅ Contadores de la derecha
+        const textosDerecha = [
             `Oro: ${gameScene.oroCount || 0}`,
-            { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
-        ).setOrigin(0.5).setDepth(102);
-
-        this.add.text(
-            this.cameras.main.width / 2 + 300,
-            this.cameras.main.height / 2 - 30,
             `Rubí: ${gameScene.rubiCount || 0}`,
-            { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
-        ).setOrigin(0.5).setDepth(102);
-
-        this.add.text(
-            this.cameras.main.width / 2 + 300,
-            this.cameras.main.height / 2 + 30,
             `Esmeralda: ${gameScene.esmeraldaCount || 0}`,
-            { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
-        ).setOrigin(0.5).setDepth(102);
-
-        this.add.text(
-            this.cameras.main.width / 2 + 300,
-            this.cameras.main.height / 2 + 90,
             `Diamante: ${gameScene.diamanteCount || 0}`,
-            { fontSize: "40px", fill: "#000", fontFamily: "Arial" }
-        ).setOrigin(0.5).setDepth(102);
+        ];
+        textosDerecha.forEach((texto, i) => {
+            const t = this.add.text(350, -90 + i * 60, texto, {
+                fontSize: "40px",
+                fill: "#000",
+                fontFamily: "Arial"
+            }).setOrigin(0.5).setDepth(102);
+            this.container.add(t);
+        });
 
-        // ✅ Botón de cerrar con "M"
+        this.container.add(titulo);
+
+        // ✅ Botón de cerrar con tecla M
         this.input.keyboard.on('keydown-M', () => {
             this.cerrarMochila();
+        });
+
+        this.events.on("update", () => {
+            const w = this.cameras.main.width;
+            const h = this.cameras.main.height;
+
+            this.container.setPosition(this.cameras.main.scrollX + w / 2, this.cameras.main.scrollY + h / 2);
+
+            this.overlay.setSize(w, h);
+            this.border.setSize(w - 50, h - 50);
+            this.panel.setSize(w - 100, h - 100);
         });
     }
 
     cerrarMochila() {
-        console.log("🎒 Mochila cerrada");
+        debugLog("🎒 Mochila cerrada");
 
         const gameScene = this.scene.get('GameScene');
         if (gameScene) {
@@ -1876,7 +1902,7 @@ class HelpScene extends Phaser.Scene {
     }
 
     create() {
-        console.log("📖 Pantalla de ayuda abierta");
+        debugLog("📖 Pantalla de ayuda abierta");
 
         // ✅ Obtener la escena del juego
         const gameScene = this.scene.get('GameScene');
@@ -1885,152 +1911,61 @@ class HelpScene extends Phaser.Scene {
             gameScene.input.keyboard.enabled = false; // Bloquear las teclas
         }
 
-        // ✅ Fondo semitransparente
-        const overlay = this.add.rectangle(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2,
-            this.cameras.main.width,
-            this.cameras.main.height,
-            0x000000,
-            0.7
-        ).setDepth(100);
+        this.container = this.add.container(
+            this.cameras.main.scrollX + this.cameras.main.width / 2,
+            this.cameras.main.scrollY + this.cameras.main.height / 2
+        );
 
-        // ✅ Borde de la ayuda
-        const border = this.add.rectangle(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2,
-            this.cameras.main.width - 325,
-            this.cameras.main.height - 100,
-            0x5A3825
-        ).setDepth(101).setStrokeStyle(4, 0x000000);
+        this.overlay = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.7).setDepth(100);
+        this.border = this.add.rectangle(0, 0, this.cameras.main.width - 325, this.cameras.main.height - 100, 0x5A3825).setStrokeStyle(4, 0x000000).setDepth(101);
+        this.panel = this.add.rectangle(0, 0, this.cameras.main.width - 350, this.cameras.main.height - 125, 0xFFF0C9).setStrokeStyle(4, 0x000000).setDepth(101);
+        this.container.add([this.overlay, this.border, this.panel]);
 
-        // ✅ Panel de la ayuda
-        const panel = this.add.rectangle(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2,
-            this.cameras.main.width - 350,
-            this.cameras.main.height - 125,
-            0xFFF0C9
-        ).setDepth(101).setStrokeStyle(4, 0x000000);
+        // ✅ Título
+        const titulo = this.add.text(0, -250, "📖 AYUDA", {
+            fontSize: "50px",
+            fill: "#000",
+            fontFamily: "Arial",
+            fontStyle: "bold",
+            align: "center"
+        }).setOrigin(0.5).setDepth(102);
+        this.container.add(titulo);
 
-        // ✅ Título "Ayuda"
-        this.add.text(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2 - 250,
-            "📖 AYUDA",
-            {
-                fontSize: "48px",
-                fill: "#000",
-                fontFamily: "Arial",
-                fontStyle: "bold",
-                align: "center"
-            }
-        ).setOrigin(0.5).setDepth(102);
+        // ✅ Bloques de texto (organizados con separaciones)
+        const textoAyuda = [
+            { y: -200, contenido: "🎯 OBJETIVO" },
+            { y: -160, contenido: "Extrae todos los minerales del mapa para ganar.\nCuidado con las caídas, perderás vida." },
+            { y: -80, contenido: "🎮 CONTROLES" },
+            { y: 0, contenido: "- Flechas: Moverse\n- Espacio: Colocar escaleras / Entrar a tiendas\n- Tecla M: Abrir mochila\n- Tecla P: Pausar el juego" },
+            { y: 100, contenido: "🏬 TIENDAS" },
+            { y: 150, contenido: "- Arsenal: Comprar picos y escaleras\n- Refinería: Vender minerales por monedas" }
+        ];
 
-        // ✅ Sección: Objetivo
-        this.add.text(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2 - 190,
-            "🎯 OBJETIVO",
-            {
-                fontSize: "32px",
-                fill: "#000",
-                fontFamily: "Arial",
-                fontStyle: "bold"
-            }
-        ).setOrigin(0.5).setDepth(102);
-
-        this.add.text(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2 - 145,
-            "Extrae todos los minerales del mapa para ganar.\nCuidado con las caídas, ya que perderás vida.",
-            {
+        textoAyuda.forEach(info => {
+            const t = this.add.text(0, info.y, info.contenido, {
                 fontSize: "24px",
-                fill: "#333",
+                fill: "#000",
                 fontFamily: "Arial",
                 align: "center",
-                wordWrap: { width: 600 }
-            }
-        ).setOrigin(0.5).setDepth(102);
-
-        // ✅ Sección: Controles
-        this.add.text(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2 - 90,
-            "🎮 CONTROLES",
-            {
-                fontSize: "32px",
-                fill: "#000",
-                fontFamily: "Arial",
-                fontStyle: "bold"
-            }
-        ).setOrigin(0.5).setDepth(102);
-
-        const controles = [
-            "Flechas: Moverse",
-            "Espacio: Colocar escaleras o entrar a la refinería y al arsenal",
-            "Tecla M: Abrir mochila",
-            "Tecla P: Pausar el juego"
-        ];
-
-        controles.forEach((texto, index) => {
-            this.add.text(
-                this.cameras.main.width / 2,
-                this.cameras.main.height / 2 - 50 + index * 40,
-                texto,
-                {
-                    fontSize: "24px",
-                    fill: "#333",
-                    fontFamily: "Arial"
-                }
-            ).setOrigin(0.5).setDepth(102);
+                wordWrap: { width: this.cameras.main.width - 150 }
+            }).setOrigin(0.5).setDepth(102);
+            this.container.add(t);
         });
 
-        // ✅ Sección: Tiendas
-        this.add.text(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2 + 130,
-            "🏬 TIENDAS",
-            {
-                fontSize: "32px",
-                fill: "#000",
-                fontFamily: "Arial",
-                fontStyle: "bold"
-            }
-        ).setOrigin(0.5).setDepth(102);
+        // ✅ Botón de cerrar
+        const botonCerrar = this.add.text(360, -this.cameras.main.height / 2 + 85, "❌", {
+            fontSize: "28px",
+            fill: "#ff0000",
+            fontFamily: "Arial",
+            fontStyle: "bold"
+        }).setOrigin(0.5).setDepth(103).setInteractive();
 
-        const tiendas = [
-            "🛠️ Arsenal: Comprar picos y escaleras",
-            "💰 Refinería: Vender minerales por monedas"
-        ];
-
-        tiendas.forEach((texto, index) => {
-            this.add.text(
-                this.cameras.main.width / 2,
-                this.cameras.main.height / 2 + 170 + index * 40,
-                texto,
-                {
-                    fontSize: "24px",
-                    fill: "#333",
-                    fontFamily: "Arial"
-                }
-            ).setOrigin(0.5).setDepth(102);
+        botonCerrar.on("pointerdown", () => {
+            this.scene.stop();
         });
+        this.container.add(botonCerrar);
 
-        // ✅ Cerrar con tecla "X"
-        const closeButton = this.add.text(
-            this.cameras.main.width / 2 + 570,
-            this.cameras.main.height / 2 - 260,
-            "❌",
-            {
-                fontSize: "28px",
-                fill: "#ff0000",
-                fontFamily: "Arial",
-                fontStyle: "bold"
-            }
-        ).setOrigin(0.5).setDepth(103).setInteractive();
-
-        closeButton.on("pointerdown", () => {
+        botonCerrar.on("pointerdown", () => {
             // ✅ Restaurar controles al cerrar la ayuda
             const gameScene = this.scene.get('GameScene');
             if (gameScene) {
@@ -2039,6 +1974,22 @@ class HelpScene extends Phaser.Scene {
             }
 
             this.scene.stop(); // Cerrar la escena de ayuda
+        });
+
+        this.events.on("update", () => {
+            const w = this.cameras.main.width;
+            const h = this.cameras.main.height;
+
+            this.container.setPosition(this.cameras.main.scrollX + w / 2, this.cameras.main.scrollY + h / 2);
+
+            this.overlay.setSize(w, h);
+            this.border.setSize(w - 325, h - 100);
+            this.panel.setSize(w - 350, h - 125);
+
+            botonCerrar.setPosition(
+                this.cameras.main.width / 2 - 200, // horizontal: al borde derecho del panel
+                -this.cameras.main.height / 2 + 85 // vertical: un poco debajo del borde superior
+            );
         });
     }
 }
@@ -2057,54 +2008,32 @@ class LogrosScene extends Phaser.Scene {
             this.logros = gameScene.logros; // 📌 Obtener referencia a los logros de GameScene
         }
 
-        // ✅ Fondo semitransparente para la pantalla de logros
-        const overlay = this.add.rectangle(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2,
-            this.cameras.main.width,
-            this.cameras.main.height,
-            0x000000,
-            0.7
-        ).setDepth(100);
+        this.container = this.add.container(
+            this.cameras.main.scrollX + this.cameras.main.width / 2,
+            this.cameras.main.scrollY + this.cameras.main.height / 2
+        );
 
-        // ✅ Borde de la ayuda
-        const border = this.add.rectangle(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2,
-            this.cameras.main.width - 325,
-            this.cameras.main.height - 100,
-            0x5A3825
-        ).setDepth(101).setStrokeStyle(4, 0x000000);
+        this.overlay = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.7).setDepth(100);
+        this.border = this.add.rectangle(0, 0, this.cameras.main.width - 325, this.cameras.main.height - 100, 0x5A3825).setStrokeStyle(4, 0x000000).setDepth(101);
+        this.panel = this.add.rectangle(0, 0, this.cameras.main.width - 350, this.cameras.main.height - 125, 0xFFF0C9).setStrokeStyle(4, 0x000000).setDepth(101);
 
-        // ✅ Panel de la ayuda
-        const panel = this.add.rectangle(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2,
-            this.cameras.main.width - 350,
-            this.cameras.main.height - 125,
-            0xFFF0C9
-        ).setDepth(101).setStrokeStyle(4, 0x000000);
+        this.container.add([this.overlay, this.border, this.panel]);
 
-        // ✅ Título "Logros"
-        this.add.text(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2 - 250,
-            "🏆 LOGROS",
-            {
-                fontSize: "40px",
-                fill: "#000",
-                fontFamily: "Arial",
-                fontStyle: "bold",
-                align: "center"
-            }
-        ).setOrigin(0.5).setDepth(102);
+        const titulo = this.add.text(0, -this.cameras.main.height / 2 + 90, "🏆 LOGROS", {
+            fontSize: "40px",
+            fill: "#000",
+            fontFamily: "Arial",
+            fontStyle: "bold",
+            align: "center"
+        }).setOrigin(0.5).setDepth(102);
+        this.container.add(titulo);
 
-        // ✅ Mostrar los logros en dos columnas
+        // Distribución de logros
         const logrosArray = Object.keys(this.logros).map(key => ({ key, ...this.logros[key] }));
-        const startX = this.cameras.main.width / 2 - 500;
-        const startY = this.cameras.main.height / 2 - 160;
-        const columnSpacing = 600;
-        const rowSpacing = 80;
+        const startX = -this.panel.width / 2 + 90;
+        const startY = -this.panel.height / 2 + 100;
+        const columnSpacing = this.panel.width / 2;
+        const rowSpacing = this.panel.height / 7; // distribución proporcional
 
         logrosArray.forEach((logro, index) => {
             const col = index % 2;
@@ -2112,67 +2041,59 @@ class LogrosScene extends Phaser.Scene {
             const x = startX + col * columnSpacing;
             const y = startY + row * rowSpacing;
 
-            // Icono de logro (check o cruz)
-            this.add.text(
-                x - 30,
-                y,
-                logro.completado ? "✔" : "❌",
-                {
-                    fontSize: "30px",
-                    fill: logro.completado ? "#28a745" : "#dc3545", // Verde para completado, rojo para no completado
-                    fontFamily: "Arial",
-                    fontStyle: "bold"
-                }
-            ).setOrigin(0.5).setDepth(102);
+            const estaCompletado = logro.completado;
 
-            // Título del logro
-            this.add.text(
-                x + 10,
-                y,
-                logro.titulo,
-                {
-                    fontSize: "24px",
-                    fill: "#000",
-                    fontFamily: "Arial",
-                    fontStyle: "bold"
-                }
-            ).setOrigin(0, 0.5).setDepth(102);
-
-            // Descripción del logro (oculta si no está completado)
-            this.add.text(
-                x + 10,
-                y + 20,
-                logro.completado ? logro.descripcion : "???",
-                {
-                    fontSize: "20px",
-                    fill: "#444",
-                    fontFamily: "Arial"
-                }
-            ).setOrigin(0, 0.5).setDepth(102);
-        });
-
-        // ✅ Cerrar con tecla "X"
-        const closeButton = this.add.text(
-            this.cameras.main.width / 2 + 570,
-            this.cameras.main.height / 2 - 260,
-            "❌",
-            {
-                fontSize: "28px",
-                fill: "#ff0000",
+            const icono = this.add.text(x - 30, y, estaCompletado ? "✔" : "❌", {
+                fontSize: "30px",
+                fill: estaCompletado ? "#28a745" : "#dc3545",
                 fontFamily: "Arial",
                 fontStyle: "bold"
-            }
-        ).setOrigin(0.5).setDepth(103).setInteractive();
+            }).setOrigin(0.5).setDepth(102);
 
-        closeButton.on("pointerdown", () => {
-            // ✅ Restaurar controles al cerrar la logros
+            const titulo = this.add.text(x + 10, y, logro.titulo, {
+                fontSize: "24px",
+                fill: "#000",
+                fontFamily: "Arial",
+                fontStyle: "bold"
+            }).setOrigin(0, 0.5).setDepth(102);
+
+            const descripcion = this.add.text(x + 10, y + 20, estaCompletado ? logro.descripcion : "???", {
+                fontSize: "20px",
+                fill: "#444",
+                fontFamily: "Arial"
+            }).setOrigin(0, 0.5).setDepth(102);
+
+            this.container.add([icono, titulo, descripcion]);
+        });
+        const botonCerrar = this.add.text(360, -this.cameras.main.height / 2 + 85, "❌", {
+            fontSize: "28px",
+            fill: "#ff0000",
+            fontFamily: "Arial",
+            fontStyle: "bold"
+        }).setOrigin(0.5).setDepth(103).setInteractive();
+
+        botonCerrar.on("pointerdown", () => {
             const gameScene = this.scene.get('GameScene');
             if (gameScene) {
-                this.scene.resume('GameScene'); // Reanudar el juego
-                gameScene.input.keyboard.enabled = true; // Reactivar las teclas
+                this.scene.resume('GameScene');
+                gameScene.input.keyboard.enabled = true;
             }
+            this.scene.stop();
+        });
 
-            this.scene.stop(); // Cerrar la escena de ayuda
+        this.container.add(botonCerrar);
+
+        this.events.on("update", () => {
+            const w = this.cameras.main.width;
+            const h = this.cameras.main.height;
+
+            this.container.setPosition(this.cameras.main.scrollX + w / 2, this.cameras.main.scrollY + h / 2);
+
+            this.overlay.setSize(w, h);
+            this.border.setSize(w - 325, h - 100);
+            this.panel.setSize(w - 350, h - 125);
+
+            botonCerrar.setPosition(w / 2 - 200, -h / 2 + 85);
         });
     }
 }
@@ -2188,30 +2109,24 @@ class WarningScene extends Phaser.Scene {
     }
 
     create() {
-
         // ✅ Obtener la escena del juego
         const gameScene = this.scene.get('GameScene');
         if (gameScene) {
-            // ✅ Pausar completamente la escena del juego
             this.scene.pause('GameScene');
-
-            // ✅ Bloquear controles
             gameScene.input.keyboard.enabled = false;
             gameScene.input.enabled = false;
             gameScene.moving = false;
 
-            // ✅ Detener cualquier tween (animación de movimiento)
             if (gameScene.currentTween) {
                 gameScene.currentTween.stop();
                 gameScene.currentTween = null;
             }
 
-            // ✅ Asegurar que el personaje se detiene por completo
             gameScene.player.setVelocity(0, 0);
         }
 
-        // ✅ Fondo semitransparente
-        const overlay = this.add.rectangle(
+        // ✅ Fondo semitransparente que se adapta al tamaño de pantalla
+        this.overlay = this.add.rectangle(
             this.cameras.main.width / 2,
             this.cameras.main.height / 2,
             this.cameras.main.width,
@@ -2220,59 +2135,72 @@ class WarningScene extends Phaser.Scene {
             0.5
         ).setDepth(100);
 
-        // ✅ Cartel principal (fondo claro)
-        const panel = this.add.rectangle(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2,
-            400,
-            200,
-            0xFFFFFF
-        ).setDepth(101).setStrokeStyle(4, 0x000000);
+        // ✅ Contenedor del cartel
+        this.cartel = this.add.container(
+            this.cameras.main.scrollX + this.cameras.main.width / 2,
+            this.cameras.main.scrollY + this.cameras.main.height / 2
+        ).setDepth(101); // Asegurar que está por encima del overlay
+
+        // ✅ Borde del cartel
+        const border = this.add.rectangle(0, 0, 400, 200, 0x5A3825)
+            .setStrokeStyle(4, 0x000000)
+            .setDepth(101);
+
+        // ✅ Panel interior
+        const panel = this.add.rectangle(0, 0, 380, 180, 0xFFF0C9)
+            .setStrokeStyle(4, 0x000000)
+            .setDepth(102);
 
         // ✅ Texto de advertencia
-        const warningText = this.add.text(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2,
-            `No puedes picar ${this.mineral} con un pico de ${this.pico}`,
-            {
-                fontSize: "22px",
-                fill: "#000",
-                fontFamily: "Arial",
-                align: "center",
-                wordWrap: { width: 350 }
-            }
-        ).setOrigin(0.5).setDepth(102);
+        const warningText = this.add.text(0, 0, `No puedes picar ${this.mineral} con un pico de ${this.pico}`, {
+            fontSize: "22px",
+            fill: "#000",
+            fontFamily: "Arial",
+            align: "center",
+            wordWrap: { width: 350 }
+        }).setOrigin(0.5).setDepth(103);
 
         // ✅ Botón de cerrar ("X")
-        const closeButton = this.add.text(
-            this.cameras.main.width / 2 + 180,
-            this.cameras.main.height / 2 - 80,
-            "❌",
-            {
-                fontSize: "28px",
-                fill: "#ff0000",
-                fontFamily: "Arial",
-                fontStyle: "bold"
-            }
-        ).setOrigin(0.5).setDepth(103).setInteractive();
+        const closeButton = this.add.text(170, -70, "❌", {
+            fontSize: "28px",
+            fill: "#ff0000",
+            fontFamily: "Arial",
+            fontStyle: "bold"
+        }).setOrigin(0.5).setDepth(104).setInteractive();
 
         closeButton.on("pointerdown", () => {
-            // ✅ Restaurar controles y reanudar la escena del juego
             const gameScene = this.scene.get('GameScene');
             if (gameScene) {
-                this.scene.resume('GameScene'); // ✅ Reanudar el juego
+                this.scene.resume('GameScene');
                 gameScene.input.keyboard.enabled = true;
                 gameScene.input.enabled = true;
                 gameScene.moving = false;
             }
 
-            this.scene.stop(); // Cerrar la escena de advertencia
+            this.scene.stop();
         });
 
-        // Evitar que se interactúe con el juego mientras el mensaje está abierto
+        // ✅ Añadir todo al contenedor
+        this.cartel.add([border, panel, warningText, closeButton]);
+
+        // ✅ Ajuste dinámico en caso de redimensionar
+        this.events.on("update", () => {
+            const w = this.cameras.main.width;
+            const h = this.cameras.main.height;
+
+            this.overlay.setSize(w, h);
+            this.overlay.setPosition(w / 2, h / 2);
+
+            this.cartel.setPosition(
+                this.cameras.main.scrollX + w / 2,
+                this.cameras.main.scrollY + h / 2
+            );
+        });
+
+        // ✅ Bloquear teclado en esta escena
         this.input.keyboard.enabled = false;
 
-        // Restaurar controles al cerrar
+        // ✅ Restaurar controles al cerrar
         this.events.on('shutdown', () => {
             const gameScene = this.scene.get('GameScene');
             if (gameScene) {
@@ -2288,7 +2216,7 @@ class ArsenalMenuScene extends Phaser.Scene {
     }
 
     create() {
-        console.log("🎯 ArsenalMenuScene iniciada...");
+        debugLog("🎯 ArsenalMenuScene iniciada...");
 
         // 🔹 Fondo semitransparente que cubre toda la pantalla
         const menuBackground = this.add.rectangle(
@@ -2415,7 +2343,7 @@ class ArsenalMenuScene extends Phaser.Scene {
 
         // 🔹 Detectar tecla ESPACIO para cerrar el menú
         this.input.keyboard.on("keydown-SPACE", () => {
-            console.log("🚪 Cerrando ArsenalMenuScene...");
+            debugLog("🚪 Cerrando ArsenalMenuScene...");
             this.scene.stop(); // 🔹 Cerrar la escena
             this.scene.resume('GameScene'); // 🔹 Reanudar GameScene al cerrar el menú
         });
@@ -2437,12 +2365,12 @@ class ArsenalMenuScene extends Phaser.Scene {
                 gameScene.barraDurabilidad.setScale(1, 1);
             }
 
-            console.log(`🟢 Compraste ${nombre}. Te quedan ${gameScene.monedas} monedas.`);
+            debugLog(`🟢 Compraste ${nombre}. Te quedan ${gameScene.monedas} monedas.`);
 
             // 🔹 Actualizar el contador de monedas en el menú
             this.contadorMonedas.setText(gameScene.monedas);
         } else {
-            console.log(`❌ No tienes suficientes monedas para comprar ${nombre}.`);
+            debugLog(`❌ No tienes suficientes monedas para comprar ${nombre}.`);
         }
     }
 }
@@ -2453,7 +2381,7 @@ class RefineriaMenuScene extends Phaser.Scene {
     }
 
     create() {
-        console.log("🔹 RefineriaMenuScene iniciada...");
+        debugLog("🔹 RefineriaMenuScene iniciada...");
 
         // 🔹 Fondo semitransparente que cubre toda la pantalla
         const menuBackground = this.add.rectangle(
@@ -2583,7 +2511,7 @@ class RefineriaMenuScene extends Phaser.Scene {
 
         // 🔹 Detectar tecla ESPACIO para cerrar el menú
         this.input.keyboard.on("keydown-SPACE", () => {
-            console.log("🚪 Cerrando RefineriaMenuScene...");
+            debugLog("🚪 Cerrando RefineriaMenuScene...");
             this.scene.stop();
             this.scene.resume('GameScene'); // 🔹 Reanudar GameScene al cerrar el menú
         });
@@ -2600,13 +2528,13 @@ class RefineriaMenuScene extends Phaser.Scene {
                 gameScene.actualizarLogro(gameScene.logros.COMERCIANTE_MAYORISTA);
             }
 
-            console.log(`🟢 Refinaste 1 ${nombre}. Ahora tienes ${gameScene.monedas} monedas.`);
+            debugLog(`🟢 Refinaste 1 ${nombre}. Ahora tienes ${gameScene.monedas} monedas.`);
 
             // 🔹 Actualizar el contador de monedas en el menú
             this.contadorMonedas.setText(gameScene.monedas.toString());
         } else {
             gameScene.actualizarLogro(gameScene.logros.OFERTA_FANTASMA);
-            console.log(`❌ No tienes suficiente ${nombre} para refinar.`);
+            debugLog(`❌ No tienes suficiente ${nombre} para refinar.`);
         }
     }
 }
@@ -2678,7 +2606,7 @@ class VictoryScene extends Phaser.Scene {
     }
 
     create() {
-        console.log("🏆 Escena de victoria iniciada...");
+        debugLog("🏆 Escena de victoria iniciada...");
 
         // ✅ Fondo semitransparente
         const overlay = this.add.rectangle(
@@ -2732,13 +2660,13 @@ class VictoryScene extends Phaser.Scene {
 
         // ✅ Acciones de los botones
         botonContinuar.on("pointerdown", () => {
-            console.log("🎮 Continuando la partida...");
+            debugLog("🎮 Continuando la partida...");
             this.scene.stop(); // Detener la escena de victoria
             this.scene.resume('GameScene'); // Reanudar el juego
         });
 
         botonMenu.on("pointerdown", () => {
-            console.log("📜 Volviendo al menú principal...");
+            debugLog("📜 Volviendo al menú principal...");
             this.scene.stop('GameScene'); // Detener el juego
             this.scene.start('MenuScene'); // Volver al menú principal
         });
