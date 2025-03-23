@@ -505,7 +505,7 @@ class GameScene extends Phaser.Scene {
         this.logros = {
             MINERO_NOCTURNO: { titulo: "Minero Nocturno 🌙", descripcion: "Juega exactamente a las 00:00", completado: false },
             CASI_ME_MATO: { titulo: "Casi me mato 💀", descripcion: "Sobrevive a una caída y quédate con 10 de vida", completado: false },
-            OFERTA_FANTASMA: { titulo: "Oferta Fantasma 👻", descripcion: "Intenta vender un mineral que no tienes en la mochila", completado: false },
+            OFERTA_FANTASMA: { titulo: "Oferta Fantasma 👻", descripcion: "Intenta vender un mineral que no tienes", completado: false },
             EL_ULTIMO_GOLPE: { titulo: "El Último Golpe 🔨", descripcion: "Pica el último mineral del mapa", completado: false },
             REGRESO_DEL_INFIERNO: { titulo: "Regreso del Inframundo 🌋", descripcion: "Baja hasta la última capa y vuelve a la superficie", completado: false },
             SIN_SALIDA: { titulo: "Sin Salida 🚧", descripcion: "Quedarte sin escaleras mientras subes", completado: false },
