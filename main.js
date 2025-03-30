@@ -12,8 +12,8 @@ class MenuScene extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image('fondoMenu', 'assets/fondoMenu.png'); // Reemplaza 'fondoMenu.png' con el nombre del archivo que subiste
-        this.load.image('google_logo', 'assets/google_logo.png'); // Asegúrate de cargar 'google_logo.png' en preload()
+        this.load.image('fondoMenu', 'assets/fondoMenu.png');
+        this.load.image('google_logo', 'assets/google_logo.png');
     }
 
     create() {
@@ -458,28 +458,28 @@ class GameScene extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image('personaje', 'assets/personaje.png'); // Cargar la imagen del personaje
+        this.load.image('personaje', 'assets/personaje.png');
         this.load.image('nube1', 'assets/nube1.png');
         this.load.image('nube2', 'assets/nube2.png');
-        this.load.image('tierra', 'assets/tierra.png'); // Textura de tierra
-        this.load.image('piedra', 'assets/piedra.png'); // Textura de piedra
-        this.load.image('carbon', 'assets/carbon.png'); // Textura de carbón
+        this.load.image('tierra', 'assets/tierra.png');
+        this.load.image('piedra', 'assets/piedra.png');
+        this.load.image('carbon', 'assets/carbon.png');
         this.load.image('tierraHierba', 'assets/tierraHierba.png');
-        this.load.image('mochila', 'assets/mochila.png'); // Cambia 'mochila.png' por el nombre real del archivo
-        this.load.image('cobre', 'assets/cobre.png'); // Asegúrate de que esta línea esté en preload
-        this.load.image('hierro', 'assets/hierro.png'); // Cambia el nombre del archivo a tu textura de hierro
-        this.load.image('plata', 'assets/plata.png'); // Cambia 'plata.png' por el nombre correcto del archivo
-        this.load.image('oro', 'assets/oro.png'); // Cambia 'assets/oro.png' por la ruta de tu textura de oro
-        this.load.image('rubi', 'assets/rubi.png'); // Cambia el nombre del archivo por el correcto
-        this.load.image('esmeralda', 'assets/esmeralda.png'); // Cambia el nombre del archivo por el correcto
-        this.load.image('diamante', 'assets/diamante.png'); // Cambia el nombre del archivo por el correcto
+        this.load.image('mochila', 'assets/mochila.png');
+        this.load.image('cobre', 'assets/cobre.png');
+        this.load.image('hierro', 'assets/hierro.png');
+        this.load.image('plata', 'assets/plata.png');
+        this.load.image('oro', 'assets/oro.png');
+        this.load.image('rubi', 'assets/rubi.png');
+        this.load.image('esmeralda', 'assets/esmeralda.png');
+        this.load.image('diamante', 'assets/diamante.png');
         this.load.audio('sonido1', 'assets/sonido1.mp3');
         this.load.audio('sonido2', 'assets/sonido2.mp3');
         this.load.audio('sonido3', 'assets/sonido3.mp3');
         this.load.audio('sonido4', 'assets/sonido4.mp3');
-        this.load.image('ladder', 'assets/escalera.png'); // Ajusta la ruta si es diferente
-        this.load.image('corazon', 'assets/corazon.png'); // Carga el icono del corazón
-        this.load.image('refineria', 'assets/shop.png'); // Asegúrate de que el nombre del archivo sea correcto
+        this.load.image('ladder', 'assets/escalera.png');
+        this.load.image('corazon', 'assets/corazon.png');
+        this.load.image('refineria', 'assets/shop.png');
         this.load.image('icono_carbon', 'assets/icono_carbon.png');
         this.load.image('icono_cobre', 'assets/icono_cobre.png');
         this.load.image('icono_hierro', 'assets/icono_hierro.png');
@@ -488,15 +488,15 @@ class GameScene extends Phaser.Scene {
         this.load.image('icono_rubi', 'assets/icono_rubi.png');
         this.load.image('icono_esmeralda', 'assets/icono_esmeralda.png');
         this.load.image('icono_diamante', 'assets/icono_diamante.png');
-        this.load.image('icono_moneda', 'assets/icono_moneda.png'); // Ruta del icono de moneda
+        this.load.image('icono_moneda', 'assets/icono_moneda.png');
         this.load.image('arsenal', 'assets/arsenal.png');
         this.load.image('pico_madera', 'assets/pico_madera.png');
         this.load.image('pico_piedra', 'assets/pico_piedra.png');
         this.load.image('pico_hierro', 'assets/pico_hierro.png');
         this.load.image('pico_oro', 'assets/pico_oro.png');
         this.load.image('bloque_hierro', 'assets/bloque_hierro.png');
-        this.load.image('boton_ayuda', 'assets/boton_ayuda.png'); // Cargar el botón de ayuda
-        this.load.image('boton_logros', 'assets/boton_logros.png'); // 📌 Asegúrate de que la ruta es correcta
+        this.load.image('boton_ayuda', 'assets/boton_ayuda.png');
+        this.load.image('boton_logros', 'assets/boton_logros.png');
     }
 
     create() {
