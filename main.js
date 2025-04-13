@@ -1076,7 +1076,7 @@ class GameScene extends Phaser.Scene {
                         this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
-                        // Dibujar capa de carbón encima
+                        // Dibujar capa de cobre encima
                         this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'cobre')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
@@ -1085,7 +1085,7 @@ class GameScene extends Phaser.Scene {
                         this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
-                        // Dibujar capa de carbón encima
+                        // Dibujar capa de hierro encima
                         this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'hierro')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
@@ -1094,7 +1094,7 @@ class GameScene extends Phaser.Scene {
                         this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
-                        // Dibujar capa de carbón encima
+                        // Dibujar capa de plata encima
                         this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'plata')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
@@ -1103,7 +1103,7 @@ class GameScene extends Phaser.Scene {
                         this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
-                        // Dibujar capa de carbón encima
+                        // Dibujar capa de oro encima
                         this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'oro')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
@@ -1112,7 +1112,7 @@ class GameScene extends Phaser.Scene {
                         this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
-                        // Dibujar capa de carbón encima
+                        // Dibujar capa de rubí encima
                         this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'rubi')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
@@ -1121,7 +1121,7 @@ class GameScene extends Phaser.Scene {
                         this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
-                        // Dibujar capa de carbón encima
+                        // Dibujar capa de esmeralda encima
                         this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'esmeralda')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
@@ -1130,7 +1130,7 @@ class GameScene extends Phaser.Scene {
                         this.grid[x][y].baseSprite = this.add.image(x * this.tileSize, y * this.tileSize, 'piedra')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
-                        // Dibujar capa de carbón encima
+                        // Dibujar capa de diamnte encima
                         this.grid[x][y].overlaySprite = this.add.image(x * this.tileSize, y * this.tileSize, 'diamante')
                             .setOrigin(0)
                             .setDisplaySize(this.tileSize, this.tileSize);
